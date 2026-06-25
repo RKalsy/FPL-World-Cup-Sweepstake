@@ -85,7 +85,14 @@
       awards: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=946029449&single=true&output=csv',
       metadata: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=1720021185&single=true&output=csv',
       previousPositions: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=517768976&single=true&output=csv',
-      knockout: ''
+      knockout: '',
+      fallback: {
+        teams: 'data/teams.csv',
+        awards: 'data/awards.csv',
+        metadata: 'data/metadata.csv',
+        previousPositions: 'data/previous-positions.csv',
+        knockout: ''
+      }
     };
   </script>
   <script src="app.js" defer></script>

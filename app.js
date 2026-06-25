@@ -12,10 +12,18 @@ const DEFAULT_CONFIG = {
   awards: window.AWARDS_CSV,
   metadata: window.METADATA_CSV,
   previousPositions: window.PREVIOUS_POSITIONS_CSV,
-  knockout: window.KNOCKOUT_CSV || ''
+  knockout: window.KNOCKOUT_CSV || '',
+  fallback: {
+    teams: 'data/teams.csv',
+    awards: 'data/awards.csv',
+    metadata: 'data/metadata.csv',
+    previousPositions: 'data/previous-positions.csv',
+    knockout: ''
+  }
 };
 
 const config = { ...DEFAULT_CONFIG, ...(window.SHEET_CONFIG || {}) };
+const forcedSource = new URLSearchParams(window.location.search).get('source');
 
 const elements = {
   heroCards: document.getElementById('heroCards'),
@@ -95,9 +103,31 @@ function formatSigned(value) {
 async function fetchSheet(url) {
   if (!url) return [];
   const separator = url.includes('?') ? '&' : '?';
-  const response = await fetch(`${url}${separator}ts=${Date.now()}`, { cache: 'no-store' });
+  const cacheBuster = url.startsWith('http') ? `${separator}ts=${Date.now()}` : '';
+  const response = await fetch(`${url}${cacheBuster}`, { cache: 'no-store' });
   if (!response.ok) throw new Error(`Could not load sheet: ${response.status}`);
   return parseCSV(await response.text());
+}
+
+async function fetchSheetWithFallback(primaryUrl, fallbackUrl) {
+  if (forcedSource === 'snapshot' && fallbackUrl) {
+    return {
+      rows: await fetchSheet(fallbackUrl),
+      source: 'snapshot'
+    };
+  }
+
+  try {
+    const rows = await fetchSheet(primaryUrl);
+    if (rows.length || !fallbackUrl) return { rows, source: 'live' };
+  } catch (error) {
+    if (!fallbackUrl) throw error;
+  }
+
+  return {
+    rows: await fetchSheet(fallbackUrl),
+    source: 'snapshot'
+  };
 }
 
 function normaliseTeam(row, phase) {
@@ -217,7 +247,7 @@ function teamPill(team) {
   `;
 }
 
-function renderHero(players, teams, awards, meta) {
+function renderHero(players, teams, awards, meta, source) {
   const leader = players[0];
   const teamsAlive = teams.filter((team) => !team.eliminated).length;
   const goldenBoot = awards.find((award) => /golden boot/i.test(award.Award || ''));
@@ -226,7 +256,9 @@ function renderHero(players, teams, awards, meta) {
   const phase = meta['Tournament Phase'] || 'Tournament';
 
   elements.tournamentMeta.textContent = `${phase} · Updated ${lastUpdated}`;
-  elements.liveStatus.textContent = 'Live from Google Sheets';
+  elements.liveStatus.textContent = source === 'live'
+    ? 'Live from Google Sheets'
+    : 'Workbook snapshot';
   elements.heroCards.innerHTML = [
     {
       label: 'Leader',
@@ -430,24 +462,28 @@ function showError(error) {
 async function loadApp() {
   showLoading();
   try {
-    const [teamRows, awards, metadata, previousPositions, knockoutRows] = await Promise.all([
-      fetchSheet(config.teams),
-      fetchSheet(config.awards),
-      fetchSheet(config.metadata),
-      fetchSheet(config.previousPositions),
-      fetchSheet(config.knockout)
+    const fallback = config.fallback || {};
+    const [teamSheet, awardSheet, metadataSheet, previousSheet, knockoutSheet] = await Promise.all([
+      fetchSheetWithFallback(config.teams, fallback.teams),
+      fetchSheetWithFallback(config.awards, fallback.awards),
+      fetchSheetWithFallback(config.metadata, fallback.metadata),
+      fetchSheetWithFallback(config.previousPositions, fallback.previousPositions),
+      fetchSheetWithFallback(config.knockout, fallback.knockout)
     ]);
-    const meta = metadataMap(metadata);
-    const teams = teamRows
+    const meta = metadataMap(metadataSheet.rows);
+    const teams = teamSheet.rows
       .filter((row) => row.Team && row.Owner)
       .map((row) => normaliseTeam(row, meta['Tournament Phase']));
-    const players = buildPlayers(teams, previousPositions);
+    const players = buildPlayers(teams, previousSheet.rows);
+    const source = [teamSheet, awardSheet, metadataSheet, previousSheet].some((sheet) => sheet.source === 'snapshot')
+      ? 'snapshot'
+      : 'live';
 
-    renderHero(players, teams, awards, meta);
+    renderHero(players, teams, awardSheet.rows, meta, source);
     renderLeaderboard(players);
-    renderKnockout(teams, knockoutRows);
+    renderKnockout(teams, knockoutSheet.rows);
     renderPlayers(players);
-    renderAwards(awards, teams);
+    renderAwards(awardSheet.rows, teams);
   } catch (error) {
     showError(error);
   }
