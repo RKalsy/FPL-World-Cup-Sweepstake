@@ -232,10 +232,7 @@ a {
 }
 
 .leaderboard-table td:first-child {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
+  text-align: center;
 }
 
 .leaderboard-table td:nth-child(2),
@@ -260,6 +257,8 @@ a {
   min-width: 26px;
   height: 24px;
   font-size: 0.62rem;
+  margin-left: 4px;
+  vertical-align: middle;
 }
 
 .leaderboard-table tr:last-child td {
@@ -271,10 +270,11 @@ a {
 }
 
 .table-rank {
-  display: grid;
+  display: inline-grid;
   width: 26px;
   height: 26px;
   place-items: center;
+  vertical-align: middle;
   border-radius: 8px;
   background: rgba(248, 250, 252, 0.06);
   color: var(--gold);
