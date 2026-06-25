@@ -269,8 +269,16 @@ a {
   border-bottom: 0;
 }
 
-.leaderboard-table tr.is-leader {
-  background: rgba(255, 209, 102, 0.06);
+.leaderboard-table tr.rank-1 {
+  background: rgba(255, 209, 102, 0.12);
+}
+
+.leaderboard-table tr.rank-2 {
+  background: rgba(203, 213, 225, 0.1);
+}
+
+.leaderboard-table tr.rank-3 {
+  background: rgba(180, 83, 9, 0.12);
 }
 
 .table-rank {
@@ -286,11 +294,27 @@ a {
 }
 
 .table-position {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
+  display: inline-grid;
+  justify-items: center;
+  gap: 2px;
   width: 100%;
+}
+
+.rank-1 .table-rank {
+  border: 1px solid rgba(255, 209, 102, 0.68);
+  background: rgba(255, 209, 102, 0.14);
+}
+
+.rank-2 .table-rank {
+  border: 1px solid rgba(203, 213, 225, 0.54);
+  background: rgba(203, 213, 225, 0.12);
+  color: #E2E8F0;
+}
+
+.rank-3 .table-rank {
+  border: 1px solid rgba(217, 119, 6, 0.54);
+  background: rgba(180, 83, 9, 0.16);
+  color: #FDBA74;
 }
 
 .hero-card,
@@ -825,6 +849,13 @@ a {
   .table-rank {
     width: 30px;
     height: 30px;
+  }
+
+  .table-position {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
 
   .players-list {

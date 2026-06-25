@@ -355,7 +355,7 @@ function renderLeaderboard(players) {
         </thead>
         <tbody>
           ${players.map((player) => `
-            <tr class="${player.rank === 1 ? 'is-leader' : ''}">
+            <tr class="rank-${player.rank} ${player.rank === 1 ? 'is-leader' : ''}">
               <td><span class="table-position"><span class="table-rank">${player.rank}</span>${movementMarkup(player.movement)}</span></td>
               <td><strong>${escapeHTML(player.owner)}</strong><small>${player.teamsAlive} teams alive</small></td>
               <td>${player.mp}</td>
