@@ -1,0 +1,57 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+body{margin:0;font-family:Inter,Arial,sans-serif;background:linear-gradient(180deg,#081120,#101b33,#152445);color:#fff}
+.container{max-width:1200px;margin:auto;padding:16px}
+.hero,.card,.pod,.stat{background:rgba(255,255,255,.08);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:18px;margin:12px 0;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.hero{padding:28px}
+.hero h1{margin:0;font-size:2rem}
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.pod{text-align:center}
+.gold{border-color:#F4C542}.silver{border-color:#C0C0C0}.bronze{border-color:#CD7F32}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.stat{text-align:center}
+table{width:100%;border-collapse:collapse}
+th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.12)}
+tr:nth-child(-n+3){background:rgba(255,255,255,.05)}
+details{margin:10px 0}
+.teamtile{display:inline-block;min-width:120px;margin:6px;padding:10px;border-radius:12px;background:rgba(255,255,255,.06)}
+.good{border-left:4px solid #4ade80}.neutral{border-left:4px solid #facc15}.bad{border-left:4px solid #f87171}
+@media(max-width:700px){.podium,.stats{grid-template-columns:1fr}}
+
+th,td{text-align:center;vertical-align:middle}
+td:nth-child(2){font-weight:600}
+table{table-layout:fixed}
+
+body{font-family:'Manrope',sans-serif;background:linear-gradient(180deg,#081120,#0B1F3A,#12305A)}
+.hero{padding:14px;background:linear-gradient(135deg,#0B1F3A,#12305A);border-color:rgba(212,175,55,.35)}
+.hero h1{font-size:1.5rem;margin-bottom:8px}
+th,td{padding:5px 6px;font-size:12px;text-align:center}
+td:nth-child(2){font-weight:700}
+.teamgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px}
+.teamtile{min-width:auto;margin:0;font-size:12px}
+.good{border-left:4px solid #22c55e}
+.neutral{border-left:4px solid #f59e0b}
+.bad{border-left:4px solid #ef4444}
+.card h2{margin:0 0 10px 0;font-size:1rem}
+
+.hero h1{
+ letter-spacing:.08em;
+ text-transform:uppercase;
+ font-weight:800;
+}
+.card h2{
+ letter-spacing:.06em;
+ text-transform:uppercase;
+ color:#FFFFFF;
+}
+tr:nth-child(1){}
+table tr:first-child{background:rgba(255,255,255,.04)}
+.good,.neutral,.bad{
+ box-shadow:0 4px 14px rgba(0,0,0,.18);
+ border-radius:14px;
+}
+
+.card h2{color:#fff !important}
+th,td{font-size:11px}
+
+th:first-child,td:first-child{width:48px;font-size:10px;font-weight:600}
