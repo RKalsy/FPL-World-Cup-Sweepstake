@@ -189,6 +189,7 @@ a {
 .hero-card,
 .award-card,
 .player-card,
+.leaderboard-table-card,
 .round-card,
 .empty-state,
 .skeleton-card {
@@ -196,6 +197,88 @@ a {
   border-radius: 8px;
   background: var(--card);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+}
+
+.leaderboard-table-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.leaderboard-table th {
+  color: var(--muted);
+  font-size: 0.56rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.leaderboard-table td {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.leaderboard-table td:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.leaderboard-table td:nth-child(2),
+.leaderboard-table th:nth-child(2) {
+  width: 26%;
+  text-align: left;
+}
+
+.leaderboard-table td:nth-child(2) strong,
+.leaderboard-table td:nth-child(2) small {
+  display: block;
+}
+
+.leaderboard-table td:nth-child(2) small {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.leaderboard-table .movement {
+  min-width: 26px;
+  height: 24px;
+  font-size: 0.62rem;
+}
+
+.leaderboard-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.leaderboard-table tr.is-leader {
+  background: rgba(255, 209, 102, 0.06);
+}
+
+.table-rank {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(248, 250, 252, 0.06);
+  color: var(--gold);
+  font-weight: 900;
 }
 
 .hero-card,
@@ -741,7 +824,30 @@ a {
     font-size: 6rem;
   }
 
-  .leaderboard-list,
+  .leaderboard-table th,
+  .leaderboard-table td {
+    padding: 12px 10px;
+  }
+
+  .leaderboard-table th {
+    font-size: 0.68rem;
+  }
+
+  .leaderboard-table td {
+    font-size: 0.9rem;
+  }
+
+  .leaderboard-table .movement {
+    min-width: 38px;
+    height: 30px;
+    font-size: 0.75rem;
+  }
+
+  .table-rank {
+    width: 30px;
+    height: 30px;
+  }
+
   .players-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

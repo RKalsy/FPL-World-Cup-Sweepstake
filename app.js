@@ -351,7 +351,38 @@ function playerCard(player, context = 'leaderboard') {
 }
 
 function renderLeaderboard(players) {
-  elements.leaderboardCards.innerHTML = players.map((player) => playerCard(player)).join('');
+  elements.leaderboardCards.innerHTML = `
+    <div class="leaderboard-table-card">
+      <table class="leaderboard-table">
+        <thead>
+          <tr>
+            <th scope="col">Pos</th>
+            <th scope="col">Player</th>
+            <th scope="col">MP</th>
+            <th scope="col">Pts</th>
+            <th scope="col">GD</th>
+            <th scope="col">W</th>
+            <th scope="col">D</th>
+            <th scope="col">L</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${players.map((player) => `
+            <tr class="${player.rank === 1 ? 'is-leader' : ''}">
+              <td><span class="table-rank">${player.rank}</span>${movementMarkup(player.movement)}</td>
+              <td><strong>${escapeHTML(player.owner)}</strong><small>${player.teamsAlive} teams alive</small></td>
+              <td>${player.mp}</td>
+              <td><strong>${player.pts}</strong></td>
+              <td>${formatSigned(player.gd)}</td>
+              <td>${player.w}</td>
+              <td>${player.d}</td>
+              <td>${player.l}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
 function roundFromFixture(row) {
