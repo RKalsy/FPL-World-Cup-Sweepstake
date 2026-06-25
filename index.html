@@ -1,18 +1,93 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>FPL World Cup 2026</title>
-<link rel="stylesheet" href="styles.css"></head>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07111F">
+  <title>World Cup Sweepstake</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
 <body>
-<div class="container">
-<div id="hero" class="hero">Loading...</div>
-<div class="card"><h2>📊 STANDINGS</h2><div id="leaderboard"></div></div>
-<div class="card"><h2>👥 Teams by Owner</h2><div id="players"></div></div>
+  <a class="skip-link" href="#leaderboard">Skip to leaderboard</a>
 
-</div>
-<script>
-window.TEAMS_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=0&single=true&output=csv';
-window.AWARDS_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=946029449&single=true&output=csv';
-window.METADATA_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=1720021185&single=true&output=csv';
-window.PREVIOUS_POSITIONS_CSV='https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=517768976&single=true&output=csv';
-</script>
-<script src="app.js"></script></body></html>
+  <header class="app-header" aria-label="Primary">
+    <a class="brand" href="#top" aria-label="World Cup Sweepstake home">
+      <span class="brand-mark">WC</span>
+      <span>Sweepstake</span>
+    </a>
+    <nav class="top-nav" aria-label="Sections">
+      <a href="#leaderboard">Leaderboard</a>
+      <a href="#knockout">Knockout</a>
+      <a href="#players">Players</a>
+      <a href="#awards">Awards</a>
+    </nav>
+  </header>
+
+  <main id="top" class="app-shell">
+    <section class="hero section-fade" aria-labelledby="hero-title">
+      <div class="hero-kicker">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span id="liveStatus">Live from Google Sheets</span>
+      </div>
+      <div class="hero-title-wrap">
+        <h1 id="hero-title">World Cup<br>Sweepstake</h1>
+        <p id="tournamentMeta">Loading tournament data...</p>
+      </div>
+      <div id="heroCards" class="hero-cards" aria-live="polite"></div>
+    </section>
+
+    <section id="leaderboard" class="app-section section-fade" aria-labelledby="leaderboard-title">
+      <div class="section-heading">
+        <p>Live table</p>
+        <h2 id="leaderboard-title">Leaderboard</h2>
+      </div>
+      <div id="leaderboardCards" class="leaderboard-list" aria-live="polite"></div>
+    </section>
+
+    <section id="knockout" class="app-section section-fade" aria-labelledby="knockout-title">
+      <div class="section-heading">
+        <p>Path to the trophy</p>
+        <h2 id="knockout-title">Knockout Centre</h2>
+      </div>
+      <div id="knockoutCentre" class="knockout-board" aria-live="polite"></div>
+    </section>
+
+    <section id="players" class="app-section section-fade" aria-labelledby="players-title">
+      <div class="section-heading">
+        <p>Squads by owner</p>
+        <h2 id="players-title">Players</h2>
+      </div>
+      <div id="playerCards" class="players-list" aria-live="polite"></div>
+    </section>
+
+    <section id="awards" class="app-section section-fade" aria-labelledby="awards-title">
+      <div class="section-heading">
+        <p>Race trackers</p>
+        <h2 id="awards-title">Awards</h2>
+      </div>
+      <div id="awardCards" class="awards-grid" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <nav class="mobile-nav" aria-label="Quick navigation">
+    <a href="#leaderboard">Table</a>
+    <a href="#knockout">Knockout</a>
+    <a href="#players">Players</a>
+    <a href="#awards">Awards</a>
+  </nav>
+
+  <script>
+    window.SHEET_CONFIG = {
+      teams: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=0&single=true&output=csv',
+      awards: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=946029449&single=true&output=csv',
+      metadata: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=1720021185&single=true&output=csv',
+      previousPositions: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=517768976&single=true&output=csv',
+      knockout: ''
+    };
+  </script>
+  <script src="app.js" defer></script>
+</body>
+</html>
