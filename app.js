@@ -1,38 +1,454 @@
+const ROUND_COLUMNS = [
+  { key: 'Last32', label: 'Round of 32' },
+  { key: 'Last16', label: 'Round of 16' },
+  { key: 'QF', label: 'Quarter Finals' },
+  { key: 'SF', label: 'Semi Finals' },
+  { key: 'Final', label: 'Final' },
+  { key: 'Winner', label: 'Champion' }
+];
 
-function parseCSV(t){const l=t.trim().split(/\r?\n/);const h=l[0].split(',');return l.slice(1).map(r=>{const c=r.split(',');let o={};h.forEach((x,i)=>o[x]=c[i]||'');return o;});}
-async function load(){
-let teams=parseCSV(await fetch(window.TEAMS_CSV + '&ts=' + Date.now()).then(r=>r.text()));
-teams = teams.filter(t => t.Team && t.Team.trim() && t.Owner && t.Owner.trim());
-const awards=parseCSV(await fetch(window.AWARDS_CSV + '&ts=' + Date.now()).then(r=>r.text()));
-const metadata=parseCSV(await fetch(window.METADATA_CSV + '&ts=' + Date.now()).then(r=>r.text()));
-const previous=parseCSV(await fetch(window.PREVIOUS_POSITIONS_CSV + '&ts=' + Date.now()).then(r=>r.text()));
-const meta={}; metadata.forEach(r=>meta[r.Setting]=r.Value);
-const players={};
-teams.forEach(t=>{const p=t.Owner;if(!players[p])players[p]={mp:0,pts:0,gd:0,gf:0,ga:0,w:0,d:0,l:0,teams:[]};
-const pts=(+t.Pts||0); players[p].mp += (+t.MP||0); players[p].pts+=pts; players[p].gf+=(+t.GF||0); players[p].ga+=(+t.GA||0); players[p].gd+=(+t.GF||0)-(+t.GA||0); players[p].w+=(+t.W||0); players[p].d+=(+t.D||0); players[p].l+=(+t.L||0); players[p].teams.push(t);});
-const rows=Object.entries(players).sort((a,b)=>b[1].pts-a[1].pts||b[1].gd-a[1].gd||b[1].gf-a[1].gf);
-const prevRanks={}; previous.forEach(r=>prevRanks[r.Player]=parseInt(r.Rank||0));
-document.getElementById('hero').innerHTML=`<h1>FPL WORLD CUP 2026</h1><p>🥇 ${rows[0]?.[0]||''} £35 &nbsp; 🥈 ${rows[1]?.[0]||''} £20 &nbsp; 🥉 ${rows[2]?.[0]||''} £15</p><p>${meta['Tournament Phase']||''} • ${meta['Last Updated']||''}</p>`;
+const DEFAULT_CONFIG = {
+  teams: window.TEAMS_CSV,
+  awards: window.AWARDS_CSV,
+  metadata: window.METADATA_CSV,
+  previousPositions: window.PREVIOUS_POSITIONS_CSV,
+  knockout: window.KNOCKOUT_CSV || ''
+};
 
+const config = { ...DEFAULT_CONFIG, ...(window.SHEET_CONFIG || {}) };
 
-let tbl='<table><tr><th>Pos</th><th>Player</th><th>MP</th><th>Pts</th><th>GD</th><th>W</th><th>D</th><th>L</th></tr>';
-rows.forEach((r,i)=>{
-let move='<span style="color:#9ca3af">➖</span>';
-const prev=prevRanks[r[0]];
-if(prev){
- if((i+1)<prev) move='<span style="color:#22c55e">▲'+(prev-(i+1))+'</span>';
- else if((i+1)>prev) move='<span style="color:#ef4444">▼'+((i+1)-prev)+'</span>';
+const elements = {
+  heroCards: document.getElementById('heroCards'),
+  tournamentMeta: document.getElementById('tournamentMeta'),
+  liveStatus: document.getElementById('liveStatus'),
+  leaderboardCards: document.getElementById('leaderboardCards'),
+  knockoutCentre: document.getElementById('knockoutCentre'),
+  playerCards: document.getElementById('playerCards'),
+  awardCards: document.getElementById('awardCards')
+};
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [];
+  let value = '';
+  let quoted = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+
+    if (char === '"' && quoted && next === '"') {
+      value += '"';
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === ',' && !quoted) {
+      row.push(value);
+      value = '';
+    } else if ((char === '\n' || char === '\r') && !quoted) {
+      if (char === '\r' && next === '\n') index += 1;
+      row.push(value);
+      if (row.some((cell) => cell.trim() !== '')) rows.push(row);
+      row = [];
+      value = '';
+    } else {
+      value += char;
+    }
+  }
+
+  row.push(value);
+  if (row.some((cell) => cell.trim() !== '')) rows.push(row);
+  if (!rows.length) return [];
+
+  const headers = rows.shift().map((header) => header.trim());
+  return rows.map((cells) => headers.reduce((record, header, index) => {
+    record[header] = (cells[index] || '').trim();
+    return record;
+  }, {}));
 }
-const pos=(i+1)+' '+move;
-const gd=r[1].gd>0?`+${r[1].gd}`:`${r[1].gd}`;
-const bg=i===0?' style="background:linear-gradient(90deg,rgba(212,175,55,.28),transparent)"':i===1?' style="background:linear-gradient(90deg,rgba(192,192,192,.20),transparent)"':i===2?' style="background:linear-gradient(90deg,rgba(205,127,50,.20),transparent)"':'';
-tbl+=`<tr${bg}><td>${pos}</td><td>${r[0]}</td><td>${r[1].mp}</td><td>${r[1].pts}</td><td>${gd}</td><td>${r[1].w}</td><td>${r[1].d}</td><td>${r[1].l}</td></tr>`;
-});
-tbl+='</table>'; document.getElementById('leaderboard').innerHTML=tbl;
 
-
-document.getElementById('players').innerHTML=rows.map(r=>`<details><summary><span style='font-weight:800;letter-spacing:.05em'>${r[0].toUpperCase()}</span> <span style='background:#D4AF37;color:#081120;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:800'>${r[1].pts} PTS</span></summary><div class="teamgrid">${r[1].teams.map(t=>{let gd=(+t.GF||0)-(+t.GA||0);let c=(+t.Pts>1)?'good':((+t.Pts==1)?'neutral':'bad');return `<div class="teamtile ${c}">${t.Flag?.trim() || '🏳️'} ${t.Team}<br>${t.Pts||0} PTS • ${gd>0?`+${gd}`:gd} GD</div>`}).join('')}</div></details>`).join('');
-const ownerMap={};teams.forEach(t=>ownerMap[t.Team]=t.Owner);
-document.getElementById('ownership').innerHTML=teams.sort((a,b)=>a.Team.localeCompare(b.Team)).map(t=>`${t.Flag?.trim() || '🏳️'} ${t.Team} → ${t.Owner}`).join('<br>');
+function asNumber(value) {
+  const number = Number(String(value || '').replace(/[^0-9.-]/g, ''));
+  return Number.isFinite(number) ? number : 0;
 }
-load();
+
+function isTruthySheetValue(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return ['1', 'true', 'yes', 'y', 'qualified', 'winner', 'won'].includes(normalized) || asNumber(value) > 0;
+}
+
+function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[char]));
+}
+
+function formatSigned(value) {
+  const number = asNumber(value);
+  return number > 0 ? `+${number}` : String(number);
+}
+
+async function fetchSheet(url) {
+  if (!url) return [];
+  const separator = url.includes('?') ? '&' : '?';
+  const response = await fetch(`${url}${separator}ts=${Date.now()}`, { cache: 'no-store' });
+  if (!response.ok) throw new Error(`Could not load sheet: ${response.status}`);
+  return parseCSV(await response.text());
+}
+
+function normaliseTeam(row, phase) {
+  const knockoutFlags = ROUND_COLUMNS.reduce((flags, round) => {
+    flags[round.key] = isTruthySheetValue(row[round.key]);
+    return flags;
+  }, {});
+  const qualifiedRound = [...ROUND_COLUMNS].reverse().find((round) => knockoutFlags[round.key]);
+  const knockoutStarted = ROUND_COLUMNS.some((round) => Object.prototype.hasOwnProperty.call(row, round.key))
+    && !/group/i.test(phase || '');
+  const eliminated = knockoutStarted && !qualifiedRound;
+  const gd = row.GD === undefined || row.GD === '' ? asNumber(row.GF) - asNumber(row.GA) : asNumber(row.GD);
+
+  return {
+    team: row.Team || '',
+    owner: row.Owner || '',
+    flag: row.Flag || '🏳️',
+    mp: asNumber(row.MP),
+    w: asNumber(row.W),
+    d: asNumber(row.D),
+    l: asNumber(row.L),
+    gf: asNumber(row.GF),
+    ga: asNumber(row.GA),
+    gd,
+    pts: asNumber(row.Pts),
+    knockoutFlags,
+    currentRound: qualifiedRound?.label || (eliminated ? 'Eliminated' : 'Active'),
+    qualified: Boolean(qualifiedRound),
+    eliminated
+  };
+}
+
+function buildPlayers(teams, previousPositions) {
+  const previousRanks = previousPositions.reduce((map, row) => {
+    if (row.Player) map[row.Player] = asNumber(row.Rank);
+    return map;
+  }, {});
+
+  const playersByOwner = teams.reduce((map, team) => {
+    if (!team.team || !team.owner) return map;
+    if (!map.has(team.owner)) {
+      map.set(team.owner, {
+        owner: team.owner,
+        mp: 0,
+        pts: 0,
+        gd: 0,
+        gf: 0,
+        ga: 0,
+        w: 0,
+        d: 0,
+        l: 0,
+        teamsAlive: 0,
+        teams: []
+      });
+    }
+
+    const player = map.get(team.owner);
+    player.mp += team.mp;
+    player.pts += team.pts;
+    player.gd += team.gd;
+    player.gf += team.gf;
+    player.ga += team.ga;
+    player.w += team.w;
+    player.d += team.d;
+    player.l += team.l;
+    player.teamsAlive += team.eliminated ? 0 : 1;
+    player.teams.push(team);
+    return map;
+  }, new Map());
+
+  return [...playersByOwner.values()]
+    .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.owner.localeCompare(b.owner))
+    .map((player, index) => {
+      const rank = index + 1;
+      const previousRank = previousRanks[player.owner] || rank;
+      return {
+        ...player,
+        rank,
+        previousRank,
+        movement: previousRank - rank
+      };
+    });
+}
+
+function metadataMap(rows) {
+  return rows.reduce((map, row) => {
+    if (row.Setting) map[row.Setting] = row.Value || '';
+    return map;
+  }, {});
+}
+
+function teamMap(teams) {
+  return teams.reduce((map, team) => {
+    map[team.team.toLowerCase()] = team;
+    return map;
+  }, {});
+}
+
+function movementMarkup(movement) {
+  if (movement > 0) return `<span class="movement movement-up">▲ ${movement}</span>`;
+  if (movement < 0) return `<span class="movement movement-down">▼ ${Math.abs(movement)}</span>`;
+  return '<span class="movement movement-flat">−</span>';
+}
+
+function teamPill(team) {
+  const statusClass = team.eliminated ? 'is-eliminated' : team.qualified ? 'is-qualified' : 'is-active';
+  const statusIcon = team.eliminated ? '<span aria-hidden="true">×</span>' : '';
+  return `
+    <span class="team-pill ${statusClass}">
+      <span class="team-flag">${escapeHTML(team.flag)}</span>
+      <span>
+        <strong>${escapeHTML(team.team)}</strong>
+        <small>${escapeHTML(team.currentRound)} · ${team.pts} pts · ${formatSigned(team.gd)} GD</small>
+      </span>
+      ${statusIcon}
+    </span>
+  `;
+}
+
+function renderHero(players, teams, awards, meta) {
+  const leader = players[0];
+  const teamsAlive = teams.filter((team) => !team.eliminated).length;
+  const goldenBoot = awards.find((award) => /golden boot/i.test(award.Award || ''));
+  const goldenBootTeam = goldenBoot?.Team || 'TBC';
+  const lastUpdated = meta['Last Updated'] || 'Awaiting update';
+  const phase = meta['Tournament Phase'] || 'Tournament';
+
+  elements.tournamentMeta.textContent = `${phase} · Updated ${lastUpdated}`;
+  elements.liveStatus.textContent = 'Live from Google Sheets';
+  elements.heroCards.innerHTML = [
+    {
+      label: 'Leader',
+      value: leader ? leader.owner : 'TBC',
+      detail: leader ? `${leader.pts} pts · ${leader.teamsAlive} teams alive` : 'Waiting for scores'
+    },
+    {
+      label: 'Teams Alive',
+      value: teamsAlive,
+      detail: `${teams.length} teams tracked`
+    },
+    {
+      label: 'Golden Boot',
+      value: goldenBootTeam,
+      detail: goldenBoot?.Team ? 'Award tracker' : 'Awaiting sheet update'
+    }
+  ].map((card) => `
+    <article class="hero-card">
+      <p>${escapeHTML(card.label)}</p>
+      <strong>${escapeHTML(card.value)}</strong>
+      <span>${escapeHTML(card.detail)}</span>
+    </article>
+  `).join('');
+}
+
+function playerCard(player, context = 'leaderboard') {
+  const teams = [...player.teams].sort((a, b) => Number(a.eliminated) - Number(b.eliminated) || b.pts - a.pts || a.team.localeCompare(b.team));
+  return `
+    <details class="player-card ${player.rank === 1 ? 'is-leader' : ''}" ${context === 'players' ? '' : ''}>
+      <summary>
+        <span class="rank-badge">${player.rank}</span>
+        <span class="player-main">
+          <strong>${escapeHTML(player.owner)}</strong>
+          <small>${player.teamsAlive} teams alive · ${player.w}W ${player.d}D ${player.l}L</small>
+        </span>
+        <span class="player-points">${player.pts}<small>pts</small></span>
+        ${movementMarkup(player.movement)}
+        <span class="expand-indicator" aria-hidden="true"></span>
+      </summary>
+      <div class="player-expanded">
+        <div class="stat-strip">
+          <span><strong>${player.mp}</strong><small>MP</small></span>
+          <span><strong>${formatSigned(player.gd)}</strong><small>GD</small></span>
+          <span><strong>${player.gf}</strong><small>GF</small></span>
+          <span><strong>${player.ga}</strong><small>GA</small></span>
+        </div>
+        <div class="team-pill-grid">${teams.map(teamPill).join('')}</div>
+      </div>
+    </details>
+  `;
+}
+
+function renderLeaderboard(players) {
+  elements.leaderboardCards.innerHTML = players.map((player) => playerCard(player)).join('');
+}
+
+function roundFromFixture(row) {
+  return row.Round || row.round || row.Stage || row.stage || '';
+}
+
+function fixtureTeam(row, side) {
+  const names = side === 1
+    ? ['Team 1', 'Team1', 'Home', 'Team A', 'TeamA']
+    : ['Team 2', 'Team2', 'Away', 'Team B', 'TeamB'];
+  const key = names.find((name) => row[name]);
+  return key ? row[key] : '';
+}
+
+function buildFixturesFromKnockoutRows(rows, teamsByName) {
+  const byRound = new Map();
+  rows.forEach((row) => {
+    const round = roundFromFixture(row);
+    if (!round) return;
+    const first = teamsByName[fixtureTeam(row, 1).toLowerCase()];
+    const second = teamsByName[fixtureTeam(row, 2).toLowerCase()];
+    if (!first && !second) return;
+    if (!byRound.has(round)) byRound.set(round, []);
+    byRound.get(round).push({
+      first,
+      second,
+      winner: row.Winner || row.winner || ''
+    });
+  });
+  return byRound;
+}
+
+function buildFixturesFromTeamColumns(teams) {
+  const byRound = new Map();
+  ROUND_COLUMNS.forEach((round) => {
+    const roundTeams = teams.filter((team) => team.knockoutFlags[round.key]);
+    if (!roundTeams.length) return;
+    const fixtures = [];
+    for (let index = 0; index < roundTeams.length; index += 2) {
+      fixtures.push({
+        first: roundTeams[index],
+        second: roundTeams[index + 1],
+        winner: round.key === 'Winner' ? roundTeams[index]?.team : ''
+      });
+    }
+    byRound.set(round.label, fixtures);
+  });
+  return byRound;
+}
+
+function fixtureSide(team, winner) {
+  if (!team) return '<div class="fixture-team is-empty"><span>TBC</span><small>Owner TBC</small></div>';
+  const isWinner = winner && team.team.toLowerCase() === winner.toLowerCase();
+  return `
+    <div class="fixture-team ${isWinner ? 'is-winner' : ''}">
+      <span>${escapeHTML(team.flag)} ${escapeHTML(team.team)}</span>
+      <small>${escapeHTML(team.owner)}</small>
+    </div>
+  `;
+}
+
+function renderKnockout(teams, knockoutRows) {
+  const teamsByName = teamMap(teams);
+  const fixtures = knockoutRows.length
+    ? buildFixturesFromKnockoutRows(knockoutRows, teamsByName)
+    : buildFixturesFromTeamColumns(teams);
+
+  if (!fixtures.size) {
+    elements.knockoutCentre.innerHTML = `
+      <div class="empty-state">
+        <strong>Bracket awaiting qualification</strong>
+        <span>The knockout centre will populate automatically from the published sheet once round columns or a Knockout tab contain teams.</span>
+      </div>
+    `;
+    return;
+  }
+
+  elements.knockoutCentre.innerHTML = [...fixtures.entries()].map(([round, roundFixtures]) => `
+    <article class="round-card">
+      <div class="round-title">
+        <strong>${escapeHTML(round)}</strong>
+        <span>${roundFixtures.length} ${roundFixtures.length === 1 ? 'tie' : 'ties'}</span>
+      </div>
+      <div class="fixtures">
+        ${roundFixtures.map((fixture) => `
+          <div class="fixture">
+            ${fixtureSide(fixture.first, fixture.winner)}
+            <span class="versus">vs</span>
+            ${fixtureSide(fixture.second, fixture.winner)}
+          </div>
+        `).join('')}
+      </div>
+    </article>
+  `).join('');
+}
+
+function renderPlayers(players) {
+  elements.playerCards.innerHTML = players.map((player) => playerCard(player, 'players')).join('');
+}
+
+function renderAwards(awards, teams) {
+  const teamsByName = teamMap(teams);
+  const fallbackAwards = awards.length ? awards : [
+    { Award: 'World Cup Winner', Team: '' },
+    { Award: 'Golden Boot', Team: '' },
+    { Award: 'Golden Glove', Team: '' }
+  ];
+
+  elements.awardCards.innerHTML = fallbackAwards.map((award) => {
+    const team = award.Team ? teamsByName[award.Team.toLowerCase()] : null;
+    return `
+      <article class="award-card">
+        <p>${escapeHTML(award.Award || 'Award')}</p>
+        <strong>${escapeHTML(team ? `${team.flag} ${team.team}` : award.Team || 'TBC')}</strong>
+        <span>${escapeHTML(team ? team.owner : 'Awaiting sheet update')}</span>
+      </article>
+    `;
+  }).join('');
+}
+
+function showLoading() {
+  const loading = '<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>';
+  elements.heroCards.innerHTML = loading;
+  elements.leaderboardCards.innerHTML = loading;
+  elements.playerCards.innerHTML = loading;
+  elements.awardCards.innerHTML = loading;
+  elements.knockoutCentre.innerHTML = '<div class="skeleton-card wide"></div>';
+}
+
+function showError(error) {
+  const message = `
+    <div class="empty-state error">
+      <strong>Unable to load live data</strong>
+      <span>${escapeHTML(error.message || 'Please check the published Google Sheets CSV links.')}</span>
+    </div>
+  `;
+  elements.heroCards.innerHTML = message;
+  elements.leaderboardCards.innerHTML = message;
+  elements.playerCards.innerHTML = message;
+  elements.awardCards.innerHTML = message;
+  elements.knockoutCentre.innerHTML = message;
+  elements.liveStatus.textContent = 'Data connection issue';
+}
+
+async function loadApp() {
+  showLoading();
+  try {
+    const [teamRows, awards, metadata, previousPositions, knockoutRows] = await Promise.all([
+      fetchSheet(config.teams),
+      fetchSheet(config.awards),
+      fetchSheet(config.metadata),
+      fetchSheet(config.previousPositions),
+      fetchSheet(config.knockout)
+    ]);
+    const meta = metadataMap(metadata);
+    const teams = teamRows
+      .filter((row) => row.Team && row.Owner)
+      .map((row) => normaliseTeam(row, meta['Tournament Phase']));
+    const players = buildPlayers(teams, previousPositions);
+
+    renderHero(players, teams, awards, meta);
+    renderLeaderboard(players);
+    renderKnockout(teams, knockoutRows);
+    renderPlayers(players);
+    renderAwards(awards, teams);
+  } catch (error) {
+    showError(error);
+  }
+}
+
+loadApp();
