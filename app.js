@@ -312,15 +312,28 @@ function renderHero(players, teams, awards, meta, source) {
 
 function playerCard(player, context = 'leaderboard') {
   const teams = [...player.teams].sort((a, b) => Number(a.eliminated) - Number(b.eliminated) || b.pts - a.pts || a.team.localeCompare(b.team));
+  const leaderboardMetrics = [
+    { label: 'MP', value: player.mp },
+    { label: 'PTS', value: player.pts },
+    { label: 'GD', value: formatSigned(player.gd) },
+    { label: 'W', value: player.w },
+    { label: 'D', value: player.d },
+    { label: 'L', value: player.l }
+  ].map((metric) => `
+    <span class="leaderboard-metric">
+      <small>${metric.label}</small>
+      <strong>${metric.value}</strong>
+    </span>
+  `).join('');
   return `
-    <details class="player-card ${player.rank === 1 ? 'is-leader' : ''}" ${context === 'players' ? '' : ''}>
+    <details class="player-card ${context === 'leaderboard' ? 'leaderboard-card' : 'team-owner-card'} ${player.rank === 1 ? 'is-leader' : ''}">
       <summary>
         <span class="rank-badge">${player.rank}</span>
         <span class="player-main">
           <strong>${escapeHTML(player.owner)}</strong>
           <small>${player.teamsAlive} teams alive · ${player.w}W ${player.d}D ${player.l}L</small>
         </span>
-        <span class="player-points">${player.pts}<small>pts</small></span>
+        ${context === 'leaderboard' ? `<span class="leaderboard-metrics">${leaderboardMetrics}</span>` : `<span class="player-points">${player.pts}<small>pts</small></span>`}
         ${movementMarkup(player.movement)}
         <span class="expand-indicator" aria-hidden="true"></span>
       </summary>

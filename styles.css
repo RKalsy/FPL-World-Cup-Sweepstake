@@ -178,6 +178,7 @@ a {
 .leaderboard-list,
 .players-list {
   display: grid;
+  align-items: start;
   gap: 10px;
 }
 
@@ -288,6 +289,39 @@ a {
   padding: 12px;
   cursor: pointer;
   list-style: none;
+}
+
+.leaderboard-card summary {
+  grid-template-columns: 40px minmax(0, 1fr) auto 20px;
+}
+
+.leaderboard-metrics {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+.leaderboard-metric {
+  display: grid;
+  min-height: 46px;
+  align-content: center;
+  justify-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(7, 17, 31, 0.42);
+}
+
+.leaderboard-metric small {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.leaderboard-metric strong {
+  font-size: 0.95rem;
+  line-height: 1.1;
 }
 
 .player-card summary::-webkit-details-marker {
@@ -710,6 +744,14 @@ a {
   .leaderboard-list,
   .players-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .leaderboard-card summary {
+    grid-template-columns: 40px minmax(92px, 0.6fr) minmax(280px, 1fr) 42px 20px;
+  }
+
+  .leaderboard-metrics {
+    grid-column: auto;
   }
 
   .player-card + .player-card {
