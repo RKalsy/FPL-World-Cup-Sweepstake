@@ -349,6 +349,7 @@ function renderKnockout(teams, knockoutRows) {
     : buildFixturesFromTeamColumns(teams);
 
   if (!fixtures.size) {
+    elements.knockoutCentre.classList.add('is-empty');
     elements.knockoutCentre.innerHTML = `
       <div class="empty-state">
         <strong>Bracket awaiting qualification</strong>
@@ -358,6 +359,7 @@ function renderKnockout(teams, knockoutRows) {
     return;
   }
 
+  elements.knockoutCentre.classList.remove('is-empty');
   elements.knockoutCentre.innerHTML = [...fixtures.entries()].map(([round, roundFixtures]) => `
     <article class="round-card">
       <div class="round-title">

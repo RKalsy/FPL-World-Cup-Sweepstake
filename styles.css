@@ -234,10 +234,9 @@ a {
 }
 
 .section-heading {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 16px;
+  display: grid;
+  gap: 4px;
+  justify-items: start;
   margin-bottom: 14px;
 }
 
@@ -468,6 +467,17 @@ a {
   overscroll-behavior-inline: contain;
   scroll-snap-type: inline mandatory;
   scrollbar-width: thin;
+}
+
+.knockout-board.is-empty {
+  display: block;
+  margin-inline: 0;
+  padding: 0;
+  overflow: visible;
+}
+
+.knockout-board.is-empty .empty-state {
+  max-width: 520px;
 }
 
 .round-card {
