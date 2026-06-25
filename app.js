@@ -310,30 +310,17 @@ function renderHero(players, teams, awards, meta, source) {
   `).join('');
 }
 
-function playerCard(player, context = 'leaderboard') {
+function playerCard(player) {
   const teams = [...player.teams].sort((a, b) => Number(a.eliminated) - Number(b.eliminated) || b.pts - a.pts || a.team.localeCompare(b.team));
-  const leaderboardMetrics = [
-    { label: 'MP', value: player.mp },
-    { label: 'PTS', value: player.pts },
-    { label: 'GD', value: formatSigned(player.gd) },
-    { label: 'W', value: player.w },
-    { label: 'D', value: player.d },
-    { label: 'L', value: player.l }
-  ].map((metric) => `
-    <span class="leaderboard-metric">
-      <small>${metric.label}</small>
-      <strong>${metric.value}</strong>
-    </span>
-  `).join('');
   return `
-    <details class="player-card ${context === 'leaderboard' ? 'leaderboard-card' : 'team-owner-card'} ${player.rank === 1 ? 'is-leader' : ''}">
+    <details class="player-card team-owner-card ${player.rank === 1 ? 'is-leader' : ''}">
       <summary>
         <span class="rank-badge">${player.rank}</span>
         <span class="player-main">
           <strong>${escapeHTML(player.owner)}</strong>
           <small>${player.teamsAlive} teams alive · ${player.w}W ${player.d}D ${player.l}L</small>
         </span>
-        ${context === 'leaderboard' ? `<span class="leaderboard-metrics">${leaderboardMetrics}</span>` : `<span class="player-points">${player.pts}<small>pts</small></span>`}
+        <span class="player-points">${player.pts}<small>pts</small></span>
         ${movementMarkup(player.movement)}
         <span class="expand-indicator" aria-hidden="true"></span>
       </summary>
@@ -482,7 +469,7 @@ function renderKnockout(teams, knockoutRows) {
 }
 
 function renderPlayers(players) {
-  elements.playerCards.innerHTML = players.map((player) => playerCard(player, 'players')).join('');
+  elements.playerCards.innerHTML = players.map((player) => playerCard(player)).join('');
 }
 
 function renderAwards(awards, teams) {
