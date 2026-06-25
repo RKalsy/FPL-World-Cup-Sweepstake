@@ -109,10 +109,32 @@ async function fetchSheet(url) {
   return parseCSV(await response.text());
 }
 
-async function fetchSheetWithFallback(primaryUrl, fallbackUrl) {
-  if (forcedSource === 'snapshot' && fallbackUrl) {
+function snapshotRows(key) {
+  return window.SNAPSHOT_DATA?.[key] || [];
+}
+
+async function fetchFallbackSheet(fallbackUrl, snapshotKey) {
+  try {
+    const rows = await fetchSheet(fallbackUrl);
+    if (rows.length) return rows;
+  } catch (error) {
+    // Local file previews can block fetch(), so the embedded snapshot is the final fallback.
+  }
+
+  return snapshotRows(snapshotKey);
+}
+
+async function fetchSheetWithFallback(primaryUrl, fallbackUrl, snapshotKey) {
+  if (forcedSource === 'embedded') {
     return {
-      rows: await fetchSheet(fallbackUrl),
+      rows: snapshotRows(snapshotKey),
+      source: 'snapshot'
+    };
+  }
+
+  if (forcedSource === 'snapshot') {
+    return {
+      rows: await fetchFallbackSheet(fallbackUrl, snapshotKey),
       source: 'snapshot'
     };
   }
@@ -121,11 +143,15 @@ async function fetchSheetWithFallback(primaryUrl, fallbackUrl) {
     const rows = await fetchSheet(primaryUrl);
     if (rows.length || !fallbackUrl) return { rows, source: 'live' };
   } catch (error) {
-    if (!fallbackUrl) throw error;
+    const rows = await fetchFallbackSheet(fallbackUrl, snapshotKey);
+    if (rows.length || fallbackUrl || snapshotKey) {
+      return { rows, source: 'snapshot' };
+    }
+    throw error;
   }
 
   return {
-    rows: await fetchSheet(fallbackUrl),
+    rows: await fetchFallbackSheet(fallbackUrl, snapshotKey),
     source: 'snapshot'
   };
 }
@@ -464,11 +490,11 @@ async function loadApp() {
   try {
     const fallback = config.fallback || {};
     const [teamSheet, awardSheet, metadataSheet, previousSheet, knockoutSheet] = await Promise.all([
-      fetchSheetWithFallback(config.teams, fallback.teams),
-      fetchSheetWithFallback(config.awards, fallback.awards),
-      fetchSheetWithFallback(config.metadata, fallback.metadata),
-      fetchSheetWithFallback(config.previousPositions, fallback.previousPositions),
-      fetchSheetWithFallback(config.knockout, fallback.knockout)
+      fetchSheetWithFallback(config.teams, fallback.teams, 'teams'),
+      fetchSheetWithFallback(config.awards, fallback.awards, 'awards'),
+      fetchSheetWithFallback(config.metadata, fallback.metadata, 'metadata'),
+      fetchSheetWithFallback(config.previousPositions, fallback.previousPositions, 'previousPositions'),
+      fetchSheetWithFallback(config.knockout, fallback.knockout, 'knockout')
     ]);
     const meta = metadataMap(metadataSheet.rows);
     const teams = teamSheet.rows
