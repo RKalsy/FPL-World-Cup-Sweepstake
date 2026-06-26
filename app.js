@@ -20,7 +20,7 @@ const DEFAULT_CONFIG = {
     awards: 'data/awards.csv',
     metadata: 'data/metadata.csv',
     previousPositions: 'data/previous-positions.csv',
-    knockout: '',
+    knockout: 'data/knockout.csv',
     goldenBoot: '',
     goldenGlove: ''
   }
@@ -35,8 +35,7 @@ const elements = {
   liveStatus: document.getElementById('liveStatus'),
   leaderboardCards: document.getElementById('leaderboardCards'),
   knockoutCentre: document.getElementById('knockoutCentre'),
-  playerCards: document.getElementById('playerCards'),
-  awardCards: document.getElementById('awardCards')
+  playerCards: document.getElementById('playerCards')
 };
 
 function parseCSV(text) {
@@ -130,8 +129,9 @@ async function fetchFallbackSheet(fallbackUrl, snapshotKey) {
 
 async function fetchSheetWithFallback(primaryUrl, fallbackUrl, snapshotKey) {
   if (forcedSource === 'embedded') {
+    const rows = snapshotRows(snapshotKey);
     return {
-      rows: snapshotRows(snapshotKey),
+      rows: rows.length ? rows : await fetchFallbackSheet(fallbackUrl, snapshotKey),
       source: 'snapshot'
     };
   }
@@ -254,14 +254,22 @@ function metadataMap(rows) {
 
 function teamMap(teams) {
   return teams.reduce((map, team) => {
-    const key = String(team.team || '').toLowerCase().trim();
+    const key = teamLookupKey(team.team);
     if (key) map[key] = team;
     return map;
   }, {});
 }
 
 function ownerForTeam(teamName, teamsByName) {
-  return teamsByName[String(teamName || '').toLowerCase().trim()]?.owner || '';
+  return teamsByName[teamLookupKey(teamName)]?.owner || '';
+}
+
+function teamLookupKey(teamName) {
+  return String(teamName || '')
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function buildGoldenBootRace(rows, teamsByName) {
@@ -300,6 +308,12 @@ function prizeAmount(awards, awardName) {
 }
 
 function placeLabel(place) {
+  if (place === 1) return '🥇 1st Place';
+  if (place === 2) return '🥈 2nd Place';
+  return '🥉 3rd Place';
+}
+
+function prizeLabel(place) {
   if (place === 1) return '1st Place';
   if (place === 2) return '2nd Place';
   return '3rd Place';
@@ -307,7 +321,7 @@ function placeLabel(place) {
 
 function placementCard(player, place, awards) {
   const label = placeLabel(place);
-  const prize = prizeAmount(awards, label);
+  const prize = prizeAmount(awards, prizeLabel(place));
   return {
     label,
     value: player ? player.owner : 'TBC',
@@ -481,7 +495,7 @@ function fixtureTeam(row, side) {
 
 function fixtureSlot(teamName, teamsByName) {
   const normalizedName = String(teamName || '').trim();
-  const key = normalizedName.toLowerCase();
+  const key = teamLookupKey(normalizedName);
 
   if (!normalizedName || ['tbd', 'tbc'].includes(key)) {
     return {
@@ -521,7 +535,7 @@ function buildFixturesFromKnockoutRows(rows, teamsByName) {
 }
 
 function orderedRounds(fixtures) {
-  const roundOrder = ['Round of 32', 'Round of 16', 'Quarter Finals', 'Semi Finals', 'Final', 'Champion'];
+  const roundOrder = ['Round of 32', 'Round of 16', 'Quarter Finals', 'Semi Finals', 'Third Place', 'Final', 'Champion'];
   return [...fixtures.entries()].sort(([firstRound], [secondRound]) => {
     const firstIndex = roundOrder.indexOf(firstRound);
     const secondIndex = roundOrder.indexOf(secondRound);
@@ -606,71 +620,11 @@ function renderPlayers(players) {
   elements.playerCards.innerHTML = players.map((player) => playerCard(player)).join('');
 }
 
-function raceRowsMarkup(rows, type) {
-  if (!rows.length) return '<div class="race-empty">Awaiting live entries</div>';
-
-  return rows.slice(0, 5).map((row, index) => {
-    const primaryStat = type === 'boot'
-      ? `${row.goals} goals`
-      : `${row.cleanSheets} clean sheets`;
-    const secondaryStat = type === 'boot'
-      ? `${row.assists} assists`
-      : `${row.goalsConceded} conceded`;
-    return `
-      <div class="race-row">
-        <span class="race-rank">${index + 1}</span>
-        <span class="race-player">
-          <strong>${escapeHTML(row.player)}</strong>
-          <small>${escapeHTML(row.team)} · ${escapeHTML(row.owner)}</small>
-        </span>
-        <span class="race-stat">
-          <strong>${escapeHTML(primaryStat)}</strong>
-          <small>${escapeHTML(secondaryStat)}</small>
-        </span>
-      </div>
-    `;
-  }).join('');
-}
-
-function renderAwards(awards, teams, goldenBootRace, goldenGloveRace, players) {
-  const cards = [
-    ...[1, 2, 3].map((place) => {
-      const player = players[place - 1];
-      const label = placeLabel(place);
-      return `
-        <article class="award-card">
-          <p>${escapeHTML(label)}</p>
-          <strong>${escapeHTML(player ? player.owner : 'TBC')}</strong>
-          <span>${escapeHTML(player ? `${player.pts} pts` : 'Awaiting leaderboard')}</span>
-          <small class="award-prize">${escapeHTML(prizeAmount(awards, label))}</small>
-        </article>
-      `;
-    }),
-    `
-      <article class="award-card award-race-card">
-        <p>Golden Boot Race</p>
-        <div class="race-list">${raceRowsMarkup(goldenBootRace, 'boot')}</div>
-        <small class="award-prize">${escapeHTML(prizeAmount(awards, 'Golden Boot'))}</small>
-      </article>
-    `,
-    `
-      <article class="award-card award-race-card">
-        <p>Golden Glove Race</p>
-        <div class="race-list">${raceRowsMarkup(goldenGloveRace, 'glove')}</div>
-        <small class="award-prize">${escapeHTML(prizeAmount(awards, 'Golden Glove'))}</small>
-      </article>
-    `
-  ];
-
-  elements.awardCards.innerHTML = cards.join('');
-}
-
 function showLoading() {
   const loading = '<div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>';
   elements.heroCards.innerHTML = loading;
   elements.leaderboardCards.innerHTML = loading;
   elements.playerCards.innerHTML = loading;
-  elements.awardCards.innerHTML = loading;
   elements.knockoutCentre.innerHTML = '<div class="skeleton-card wide"></div>';
 }
 
@@ -684,7 +638,6 @@ function showError(error) {
   elements.heroCards.innerHTML = message;
   elements.leaderboardCards.innerHTML = message;
   elements.playerCards.innerHTML = message;
-  elements.awardCards.innerHTML = message;
   elements.knockoutCentre.innerHTML = message;
   elements.liveStatus.textContent = 'Data connection issue';
 }
@@ -718,7 +671,6 @@ async function loadApp() {
     renderLeaderboard(players);
     renderKnockout(teams, knockoutSheet.rows);
     renderPlayers(players);
-    renderAwards(awardSheet.rows, teams, goldenBootRace, goldenGloveRace, players);
   } catch (error) {
     showError(error);
   }

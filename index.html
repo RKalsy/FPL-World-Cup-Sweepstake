@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260626-awards-knockout">
+  <link rel="stylesheet" href="styles.css?v=20260626-knockout-fallback">
 </head>
 <body>
   <a class="skip-link" href="#leaderboard">Skip to leaderboard</a>
@@ -22,7 +22,6 @@
       <a href="#leaderboard">Leaderboard</a>
       <a href="#knockout">Knockout</a>
       <a href="#players">Players</a>
-      <a href="#awards">Awards</a>
     </nav>
   </header>
 
@@ -62,21 +61,12 @@
       </div>
       <div id="playerCards" class="players-list" aria-live="polite"></div>
     </section>
-
-    <section id="awards" class="app-section section-fade" aria-labelledby="awards-title">
-      <div class="section-heading">
-        <p>Race trackers</p>
-        <h2 id="awards-title">Awards</h2>
-      </div>
-      <div id="awardCards" class="awards-grid" aria-live="polite"></div>
-    </section>
   </main>
 
   <nav class="mobile-nav" aria-label="Quick navigation">
     <a href="#leaderboard">Table</a>
     <a href="#knockout">Knockout</a>
     <a href="#players">Players</a>
-    <a href="#awards">Awards</a>
   </nav>
 
   <script>
@@ -95,13 +85,13 @@
         awards: 'data/awards.csv',
         metadata: 'data/metadata.csv',
         previousPositions: 'data/previous-positions.csv',
-        knockout: '',
+        knockout: 'data/knockout.csv',
         goldenBoot: '',
         goldenGlove: ''
       }
     };
   </script>
   <script src="data/snapshot.js"></script>
-  <script src="app.js?v=20260626-awards-knockout" defer></script>
+  <script src="app.js?v=20260626-knockout-fallback" defer></script>
 </body>
 </html>
