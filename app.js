@@ -186,6 +186,9 @@ function normaliseTeam(row, phase) {
     ga: asNumber(row.GA),
     gd,
     pts: asNumber(row.Pts),
+    totalPoints: row['Total Points'] === undefined || row['Total Points'] === ''
+      ? asNumber(row.Pts)
+      : asNumber(row['Total Points']),
     knockoutFlags,
     currentRound: eliminated ? 'Eliminated' : qualifiedRound?.label || (qualified ? 'Qualified' : 'Active'),
     qualified,
@@ -212,6 +215,7 @@ function buildPlayers(teams, previousPositions) {
         w: 0,
         d: 0,
         l: 0,
+        totalPoints: 0,
         teamsAlive: 0,
         teams: []
       });
@@ -219,7 +223,8 @@ function buildPlayers(teams, previousPositions) {
 
     const player = map.get(team.owner);
     player.mp += team.mp;
-    player.pts += team.pts;
+    player.pts += team.totalPoints;
+    player.totalPoints += team.totalPoints;
     player.gd += team.gd;
     player.gf += team.gf;
     player.ga += team.ga;
@@ -348,15 +353,15 @@ function raceLeaderCard(label, raceLeader, awards, prizeName, type) {
 
   return {
     label,
-    value: raceLeader.player,
-    detail: `${raceLeader.owner} · ${primaryStat} · ${secondaryStat}${prize ? ` · ${prize}` : ''}`
+    value: raceLeader.owner,
+    detail: `${raceLeader.player} · ${primaryStat} · ${secondaryStat}${prize ? ` · ${prize}` : ''}`
   };
 }
 
 function movementMarkup(movement) {
   if (movement > 0) return `<span class="movement movement-up">▲ ${movement}</span>`;
   if (movement < 0) return `<span class="movement movement-down">▼ ${Math.abs(movement)}</span>`;
-  return '<span class="movement movement-flat">−</span>';
+  return '<span class="movement movement-flat">0</span>';
 }
 
 function teamPill(team) {
@@ -433,7 +438,7 @@ function renderLeaderboard(players) {
             <th scope="col">Pos</th>
             <th scope="col">Player</th>
             <th scope="col">MP</th>
-            <th scope="col">Pts</th>
+            <th scope="col">Total</th>
             <th scope="col">GD</th>
             <th scope="col">W</th>
             <th scope="col">D</th>
@@ -446,7 +451,7 @@ function renderLeaderboard(players) {
               <td><span class="table-position"><span class="table-rank">${player.rank}</span>${movementMarkup(player.movement)}</span></td>
               <td><strong>${escapeHTML(player.owner)}</strong></td>
               <td>${player.mp}</td>
-              <td><strong>${player.pts}</strong></td>
+              <td class="total-points"><strong>${player.totalPoints}</strong></td>
               <td>${formatSigned(player.gd)}</td>
               <td>${player.w}</td>
               <td>${player.d}</td>
@@ -575,6 +580,69 @@ function fixtureSide(team, winner) {
   `;
 }
 
+function fixtureMarkup(fixture) {
+  return `
+    <div class="fixture">
+      <div class="fixture-meta">
+        <span>${escapeHTML(fixture.match ? `Match ${fixture.match}` : fixture.status || 'Scheduled')}</span>
+        <span>${escapeHTML(fixture.date || fixture.status || '')}</span>
+      </div>
+      ${fixtureSide(fixture.first, fixture.winner)}
+      <span class="versus">vs</span>
+      ${fixtureSide(fixture.second, fixture.winner)}
+    </div>
+  `;
+}
+
+function roundFixtures(fixtures, label) {
+  return fixtures.get(label) || [];
+}
+
+function bracketColumn(title, fixtures, sideClass = '') {
+  return `
+    <article class="bracket-column ${sideClass}">
+      <div class="round-title">
+        <strong>${escapeHTML(title)}</strong>
+        <span>${fixtures.length} ${fixtures.length === 1 ? 'tie' : 'ties'}</span>
+      </div>
+      <div class="fixtures">${fixtures.map(fixtureMarkup).join('')}</div>
+    </article>
+  `;
+}
+
+function splitRound(fixtures, midpoint) {
+  return {
+    left: fixtures.slice(0, midpoint),
+    right: fixtures.slice(midpoint)
+  };
+}
+
+function renderBracket(fixtures) {
+  const r32 = splitRound(roundFixtures(fixtures, 'Round of 32'), 8);
+  const r16 = splitRound(roundFixtures(fixtures, 'Round of 16'), 4);
+  const qf = splitRound(roundFixtures(fixtures, 'Quarter Finals'), 2);
+  const sf = splitRound(roundFixtures(fixtures, 'Semi Finals'), 1);
+  const finalFixtures = roundFixtures(fixtures, 'Final');
+  const thirdPlaceFixtures = roundFixtures(fixtures, 'Third Place');
+
+  return `
+    <div class="bracket-shell">
+      ${bracketColumn('R32', r32.left, 'bracket-left')}
+      ${bracketColumn('R16', r16.left, 'bracket-left')}
+      ${bracketColumn('QF', qf.left, 'bracket-left')}
+      ${bracketColumn('SF', sf.left, 'bracket-left')}
+      <div class="bracket-center">
+        ${bracketColumn('Final', finalFixtures, 'bracket-final')}
+        ${bracketColumn('3rd Place', thirdPlaceFixtures, 'bracket-third')}
+      </div>
+      ${bracketColumn('SF', sf.right, 'bracket-right')}
+      ${bracketColumn('QF', qf.right, 'bracket-right')}
+      ${bracketColumn('R16', r16.right, 'bracket-right')}
+      ${bracketColumn('R32', r32.right, 'bracket-right')}
+    </div>
+  `;
+}
+
 function renderKnockout(teams, knockoutRows) {
   const teamsByName = teamMap(teams);
   const fixtures = knockoutRows.length
@@ -593,27 +661,7 @@ function renderKnockout(teams, knockoutRows) {
   }
 
   elements.knockoutCentre.classList.remove('is-empty');
-  elements.knockoutCentre.innerHTML = orderedRounds(fixtures).map(([round, roundFixtures]) => `
-    <article class="round-card">
-      <div class="round-title">
-        <strong>${escapeHTML(round)}</strong>
-        <span>${roundFixtures.length} ${roundFixtures.length === 1 ? 'tie' : 'ties'}</span>
-      </div>
-      <div class="fixtures">
-        ${roundFixtures.map((fixture) => `
-          <div class="fixture">
-            <div class="fixture-meta">
-              <span>${escapeHTML(fixture.match ? `Match ${fixture.match}` : fixture.status || 'Scheduled')}</span>
-              <span>${escapeHTML(fixture.date || fixture.status || '')}</span>
-            </div>
-            ${fixtureSide(fixture.first, fixture.winner)}
-            <span class="versus">vs</span>
-            ${fixtureSide(fixture.second, fixture.winner)}
-          </div>
-        `).join('')}
-      </div>
-    </article>
-  `).join('');
+  elements.knockoutCentre.innerHTML = renderBracket(fixtures);
 }
 
 function renderPlayers(players) {
