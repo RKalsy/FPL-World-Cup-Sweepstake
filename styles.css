@@ -707,6 +707,17 @@ a {
   background: rgba(7, 17, 31, 0.44);
 }
 
+.fixture-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .fixture-team {
   display: grid;
   gap: 2px;
