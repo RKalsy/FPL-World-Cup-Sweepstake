@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=20260626-medal-fade">
+  <link rel="stylesheet" href="styles.css?v=20260626-sheet-v2">
 </head>
 <body>
   <a class="skip-link" href="#leaderboard">Skip to leaderboard</a>
@@ -80,22 +80,28 @@
   </nav>
 
   <script>
+    const SHEET_ID = '1ZhI9LsT6iueq30XNm2O5Y79CVMfj4qbrOW14trm99mo';
+    const sheetCsv = (sheetName) => `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
     window.SHEET_CONFIG = {
-      teams: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=0&single=true&output=csv',
-      awards: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=946029449&single=true&output=csv',
-      metadata: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=1720021185&single=true&output=csv',
-      previousPositions: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSd2aPz9idHZEu99Wy-amHo41GxNhZF2fxkR1tYXZz__NVlMx44bbu9wzE8URZJC4SpQSKZOSrBmGAL/pub?gid=517768976&single=true&output=csv',
-      knockout: '',
+      teams: sheetCsv('Teams'),
+      awards: sheetCsv('Awards'),
+      metadata: sheetCsv('Metadata'),
+      previousPositions: sheetCsv('Previous Positions'),
+      knockout: sheetCsv('Knockout'),
+      goldenBoot: sheetCsv('Golden Boot'),
+      goldenGlove: sheetCsv('Golden Glove'),
       fallback: {
         teams: 'data/teams.csv',
         awards: 'data/awards.csv',
         metadata: 'data/metadata.csv',
         previousPositions: 'data/previous-positions.csv',
-        knockout: ''
+        knockout: '',
+        goldenBoot: '',
+        goldenGlove: ''
       }
     };
   </script>
   <script src="data/snapshot.js"></script>
-  <script src="app.js?v=20260626-table" defer></script>
+  <script src="app.js?v=20260626-sheet-v2" defer></script>
 </body>
 </html>

@@ -13,12 +13,16 @@ const DEFAULT_CONFIG = {
   metadata: window.METADATA_CSV,
   previousPositions: window.PREVIOUS_POSITIONS_CSV,
   knockout: window.KNOCKOUT_CSV || '',
+  goldenBoot: window.GOLDEN_BOOT_CSV || '',
+  goldenGlove: window.GOLDEN_GLOVE_CSV || '',
   fallback: {
     teams: 'data/teams.csv',
     awards: 'data/awards.csv',
     metadata: 'data/metadata.csv',
     previousPositions: 'data/previous-positions.csv',
-    knockout: ''
+    knockout: '',
+    goldenBoot: '',
+    goldenGlove: ''
   }
 };
 
@@ -164,7 +168,10 @@ function normaliseTeam(row, phase) {
   const qualifiedRound = [...ROUND_COLUMNS].reverse().find((round) => knockoutFlags[round.key]);
   const knockoutStarted = ROUND_COLUMNS.some((round) => Object.prototype.hasOwnProperty.call(row, round.key))
     && !/group/i.test(phase || '');
-  const eliminated = knockoutStarted && !qualifiedRound;
+  const sheetQualified = isTruthySheetValue(row.Qualified);
+  const sheetEliminated = isTruthySheetValue(row.Eliminated);
+  const qualified = sheetQualified || Boolean(qualifiedRound);
+  const eliminated = sheetEliminated || (knockoutStarted && !qualifiedRound && !sheetQualified);
   const gd = row.GD === undefined || row.GD === '' ? asNumber(row.GF) - asNumber(row.GA) : asNumber(row.GD);
 
   return {
@@ -180,8 +187,8 @@ function normaliseTeam(row, phase) {
     gd,
     pts: asNumber(row.Pts),
     knockoutFlags,
-    currentRound: qualifiedRound?.label || (eliminated ? 'Eliminated' : 'Active'),
-    qualified: Boolean(qualifiedRound),
+    currentRound: eliminated ? 'Eliminated' : qualifiedRound?.label || (qualified ? 'Qualified' : 'Active'),
+    qualified,
     eliminated
   };
 }
@@ -247,9 +254,40 @@ function metadataMap(rows) {
 
 function teamMap(teams) {
   return teams.reduce((map, team) => {
-    map[team.team.toLowerCase()] = team;
+    const key = String(team.team || '').toLowerCase().trim();
+    if (key) map[key] = team;
     return map;
   }, {});
+}
+
+function ownerForTeam(teamName, teamsByName) {
+  return teamsByName[String(teamName || '').toLowerCase().trim()]?.owner || '';
+}
+
+function buildGoldenBootRace(rows, teamsByName) {
+  return rows
+    .filter((row) => row.Player && row.Team)
+    .map((row) => ({
+      player: row.Player,
+      team: row.Team,
+      owner: ownerForTeam(row.Team, teamsByName) || row.Owner || 'Owner TBC',
+      goals: asNumber(row.Goals),
+      assists: asNumber(row.Assists)
+    }))
+    .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.player.localeCompare(b.player));
+}
+
+function buildGoldenGloveRace(rows, teamsByName) {
+  return rows
+    .filter((row) => row.Player && row.Team)
+    .map((row) => ({
+      player: row.Player,
+      team: row.Team,
+      owner: ownerForTeam(row.Team, teamsByName) || row.Owner || 'Owner TBC',
+      cleanSheets: asNumber(row['Clean Sheets']),
+      goalsConceded: asNumber(row['Goals Conceded'])
+    }))
+    .sort((a, b) => b.cleanSheets - a.cleanSheets || a.goalsConceded - b.goalsConceded || a.player.localeCompare(b.player));
 }
 
 function movementMarkup(movement) {
@@ -273,11 +311,10 @@ function teamPill(team) {
   `;
 }
 
-function renderHero(players, teams, awards, meta, source) {
+function renderHero(players, teams, goldenBootRace, meta, source) {
   const leader = players[0];
   const teamsAlive = teams.filter((team) => !team.eliminated).length;
-  const goldenBoot = awards.find((award) => /golden boot/i.test(award.Award || ''));
-  const goldenBootTeam = goldenBoot?.Team || 'TBC';
+  const goldenBootLeader = goldenBootRace[0];
   const lastUpdated = meta['Last Updated'] || 'Awaiting update';
   const phase = meta['Tournament Phase'] || 'Tournament';
 
@@ -298,8 +335,10 @@ function renderHero(players, teams, awards, meta, source) {
     },
     {
       label: 'Golden Boot',
-      value: goldenBootTeam,
-      detail: goldenBoot?.Team ? 'Award tracker' : 'Awaiting sheet update'
+      value: goldenBootLeader ? goldenBootLeader.player : 'TBC',
+      detail: goldenBootLeader
+        ? `${goldenBootLeader.goals} goals · ${goldenBootLeader.owner}`
+        : 'Awaiting goals'
     }
   ].map((card) => `
     <article class="hero-card">
@@ -376,10 +415,32 @@ function roundFromFixture(row) {
   return row.Round || row.round || row.Stage || row.stage || '';
 }
 
+function roundLabel(round) {
+  const normalized = String(round || '').trim().toLowerCase().replace(/[\s_-]/g, '');
+  const labels = {
+    last32: 'Round of 32',
+    roundof32: 'Round of 32',
+    r32: 'Round of 32',
+    last16: 'Round of 16',
+    roundof16: 'Round of 16',
+    r16: 'Round of 16',
+    qf: 'Quarter Finals',
+    quarterfinal: 'Quarter Finals',
+    quarterfinals: 'Quarter Finals',
+    sf: 'Semi Finals',
+    semifinal: 'Semi Finals',
+    semifinals: 'Semi Finals',
+    final: 'Final',
+    champion: 'Champion',
+    winner: 'Champion'
+  };
+  return labels[normalized] || String(round || '').trim();
+}
+
 function fixtureTeam(row, side) {
   const names = side === 1
-    ? ['Team 1', 'Team1', 'Home', 'Team A', 'TeamA']
-    : ['Team 2', 'Team2', 'Away', 'Team B', 'TeamB'];
+    ? ['Team 1', 'Team1', 'Home Team', 'Home', 'Team A', 'TeamA']
+    : ['Team 2', 'Team2', 'Away Team', 'Away', 'Team B', 'TeamB'];
   const key = names.find((name) => row[name]);
   return key ? row[key] : '';
 }
@@ -387,11 +448,10 @@ function fixtureTeam(row, side) {
 function buildFixturesFromKnockoutRows(rows, teamsByName) {
   const byRound = new Map();
   rows.forEach((row) => {
-    const round = roundFromFixture(row);
+    const round = roundLabel(roundFromFixture(row));
     if (!round) return;
-    const first = teamsByName[fixtureTeam(row, 1).toLowerCase()];
-    const second = teamsByName[fixtureTeam(row, 2).toLowerCase()];
-    if (!first && !second) return;
+    const first = teamsByName[fixtureTeam(row, 1).toLowerCase().trim()];
+    const second = teamsByName[fixtureTeam(row, 2).toLowerCase().trim()];
     if (!byRound.has(round)) byRound.set(round, []);
     byRound.get(round).push({
       first,
@@ -400,6 +460,18 @@ function buildFixturesFromKnockoutRows(rows, teamsByName) {
     });
   });
   return byRound;
+}
+
+function orderedRounds(fixtures) {
+  const roundOrder = ['Round of 32', 'Round of 16', 'Quarter Finals', 'Semi Finals', 'Final', 'Champion'];
+  return [...fixtures.entries()].sort(([firstRound], [secondRound]) => {
+    const firstIndex = roundOrder.indexOf(firstRound);
+    const secondIndex = roundOrder.indexOf(secondRound);
+    if (firstIndex === -1 && secondIndex === -1) return firstRound.localeCompare(secondRound);
+    if (firstIndex === -1) return 1;
+    if (secondIndex === -1) return -1;
+    return firstIndex - secondIndex;
+  });
 }
 
 function buildFixturesFromTeamColumns(teams) {
@@ -449,7 +521,7 @@ function renderKnockout(teams, knockoutRows) {
   }
 
   elements.knockoutCentre.classList.remove('is-empty');
-  elements.knockoutCentre.innerHTML = [...fixtures.entries()].map(([round, roundFixtures]) => `
+  elements.knockoutCentre.innerHTML = orderedRounds(fixtures).map(([round, roundFixtures]) => `
     <article class="round-card">
       <div class="round-title">
         <strong>${escapeHTML(round)}</strong>
@@ -472,24 +544,75 @@ function renderPlayers(players) {
   elements.playerCards.innerHTML = players.map((player) => playerCard(player)).join('');
 }
 
-function renderAwards(awards, teams) {
-  const teamsByName = teamMap(teams);
-  const fallbackAwards = awards.length ? awards : [
-    { Award: 'World Cup Winner', Team: '' },
-    { Award: 'Golden Boot', Team: '' },
-    { Award: 'Golden Glove', Team: '' }
-  ];
+function prizeAmount(awards, awardName) {
+  const award = awards.find((row) => String(row.Award || '').trim().toLowerCase() === awardName.toLowerCase());
+  const amount = award?.['Amount (£)'] || award?.Amount || '';
+  return amount ? `Prize £${asNumber(amount)}` : '';
+}
 
-  elements.awardCards.innerHTML = fallbackAwards.map((award) => {
-    const team = award.Team ? teamsByName[award.Team.toLowerCase()] : null;
+function raceRowsMarkup(rows, type) {
+  if (!rows.length) return '<div class="race-empty">Awaiting live entries</div>';
+
+  return rows.slice(0, 5).map((row, index) => {
+    const primaryStat = type === 'boot'
+      ? `${row.goals} goals`
+      : `${row.cleanSheets} clean sheets`;
+    const secondaryStat = type === 'boot'
+      ? `${row.assists} assists`
+      : `${row.goalsConceded} conceded`;
     return `
-      <article class="award-card">
-        <p>${escapeHTML(award.Award || 'Award')}</p>
-        <strong>${escapeHTML(team ? `${team.flag} ${team.team}` : award.Team || 'TBC')}</strong>
-        <span>${escapeHTML(team ? team.owner : 'Awaiting sheet update')}</span>
-      </article>
+      <div class="race-row">
+        <span class="race-rank">${index + 1}</span>
+        <span class="race-player">
+          <strong>${escapeHTML(row.player)}</strong>
+          <small>${escapeHTML(row.team)} · ${escapeHTML(row.owner)}</small>
+        </span>
+        <span class="race-stat">
+          <strong>${escapeHTML(primaryStat)}</strong>
+          <small>${escapeHTML(secondaryStat)}</small>
+        </span>
+      </div>
     `;
   }).join('');
+}
+
+function renderAwards(awards, teams, goldenBootRace, goldenGloveRace, players) {
+  const leader = players[0];
+  const winnerTeam = teams.find((team) => team.knockoutFlags.Winner);
+  const cards = [
+    `
+      <article class="award-card">
+        <p>1st Place</p>
+        <strong>${escapeHTML(leader ? leader.owner : 'TBC')}</strong>
+        <span>${escapeHTML(leader ? `${leader.pts} pts · ${leader.teamsAlive} teams alive` : 'Awaiting leaderboard')}</span>
+        <small class="award-prize">${escapeHTML(prizeAmount(awards, '1st Place'))}</small>
+      </article>
+    `,
+    `
+      <article class="award-card">
+        <p>World Cup Winner</p>
+        <strong>${escapeHTML(winnerTeam ? `${winnerTeam.flag} ${winnerTeam.team}` : 'TBC')}</strong>
+        <span>${escapeHTML(winnerTeam ? winnerTeam.owner : 'Awaiting final')}</span>
+        <small class="award-prize">${escapeHTML(prizeAmount(awards, 'World Cup Winner'))}</small>
+      </article>
+    `,
+    `
+      <article class="award-card award-race-card">
+        <p>Golden Boot Race</p>
+        <div class="race-list">${raceRowsMarkup(goldenBootRace, 'boot')}</div>
+        <small class="award-prize">${escapeHTML(prizeAmount(awards, 'Golden Boot'))}</small>
+      </article>
+    `,
+    `
+      <article class="award-card award-race-card">
+        <p>Golden Glove Race</p>
+        <div class="race-list">${raceRowsMarkup(goldenGloveRace, 'glove')}</div>
+        <small class="award-prize">${escapeHTML(prizeAmount(awards, 'Golden Glove'))}</small>
+      </article>
+    `
+  ];
+
+  elements.awardCards.innerHTML = cards.join('');
 }
 
 function showLoading() {
@@ -520,27 +643,32 @@ async function loadApp() {
   showLoading();
   try {
     const fallback = config.fallback || {};
-    const [teamSheet, awardSheet, metadataSheet, previousSheet, knockoutSheet] = await Promise.all([
+    const [teamSheet, awardSheet, metadataSheet, previousSheet, knockoutSheet, goldenBootSheet, goldenGloveSheet] = await Promise.all([
       fetchSheetWithFallback(config.teams, fallback.teams, 'teams'),
       fetchSheetWithFallback(config.awards, fallback.awards, 'awards'),
       fetchSheetWithFallback(config.metadata, fallback.metadata, 'metadata'),
       fetchSheetWithFallback(config.previousPositions, fallback.previousPositions, 'previousPositions'),
-      fetchSheetWithFallback(config.knockout, fallback.knockout, 'knockout')
+      fetchSheetWithFallback(config.knockout, fallback.knockout, 'knockout'),
+      fetchSheetWithFallback(config.goldenBoot, fallback.goldenBoot, 'goldenBoot'),
+      fetchSheetWithFallback(config.goldenGlove, fallback.goldenGlove, 'goldenGlove')
     ]);
     const meta = metadataMap(metadataSheet.rows);
     const teams = teamSheet.rows
       .filter((row) => row.Team && row.Owner)
       .map((row) => normaliseTeam(row, meta['Tournament Phase']));
     const players = buildPlayers(teams, previousSheet.rows);
-    const source = [teamSheet, awardSheet, metadataSheet, previousSheet].some((sheet) => sheet.source === 'snapshot')
+    const teamsByName = teamMap(teams);
+    const goldenBootRace = buildGoldenBootRace(goldenBootSheet.rows, teamsByName);
+    const goldenGloveRace = buildGoldenGloveRace(goldenGloveSheet.rows, teamsByName);
+    const source = [teamSheet, awardSheet, metadataSheet, previousSheet, knockoutSheet, goldenBootSheet, goldenGloveSheet].some((sheet) => sheet.source === 'snapshot')
       ? 'snapshot'
       : 'live';
 
-    renderHero(players, teams, awardSheet.rows, meta, source);
+    renderHero(players, teams, goldenBootRace, meta, source);
     renderLeaderboard(players);
     renderKnockout(teams, knockoutSheet.rows);
     renderPlayers(players);
-    renderAwards(awardSheet.rows, teams);
+    renderAwards(awardSheet.rows, teams, goldenBootRace, goldenGloveRace, players);
   } catch (error) {
     showError(error);
   }
