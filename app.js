@@ -143,15 +143,25 @@ async function fetchSheetWithFallback(primaryUrl, fallbackUrl, snapshotKey) {
     };
   }
 
+  const hasLiveSheet = /^https?:\/\//i.test(primaryUrl || '');
+
   try {
     const rows = await fetchSheet(primaryUrl);
     if (rows.length || !fallbackUrl) return { rows, source: 'live' };
   } catch (error) {
+    if (hasLiveSheet) {
+      throw error;
+    }
+
     const rows = await fetchFallbackSheet(fallbackUrl, snapshotKey);
     if (rows.length || fallbackUrl || snapshotKey) {
       return { rows, source: 'snapshot' };
     }
     throw error;
+  }
+
+  if (hasLiveSheet) {
+    return { rows: [], source: 'live' };
   }
 
   return {
