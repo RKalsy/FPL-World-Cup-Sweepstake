@@ -702,6 +702,7 @@ a {
 
 .bracket-column {
   scroll-snap-align: start;
+  position: relative;
   padding: 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -742,9 +743,11 @@ a {
   grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
   grid-template-areas:
     "meta meta meta"
-    "home vs away";
+    "home vs away"
+    "progress progress progress";
   align-items: center;
   gap: 5px;
+  position: relative;
   padding: 6px;
   border: 1px solid rgba(148, 163, 184, 0.12);
   border-radius: 8px;
@@ -766,6 +769,7 @@ a {
 .fixture-team {
   display: grid;
   gap: 2px;
+  min-width: 0;
   min-height: 34px;
   align-content: center;
   padding: 6px;
@@ -774,17 +778,19 @@ a {
 }
 
 .fixture-team span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
   font-size: 0.68rem;
   font-weight: 800;
+  line-height: 1.15;
 }
 
 .fixture-team small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow: visible;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.15;
 }
 
 .fixture-home {
@@ -812,6 +818,56 @@ a {
   font-size: 0.58rem;
   font-weight: 900;
   text-transform: uppercase;
+}
+
+.fixture-progress {
+  grid-area: progress;
+  justify-self: stretch;
+  margin-top: 1px;
+  padding: 4px 6px;
+  border: 1px solid rgba(255, 209, 102, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 209, 102, 0.07);
+  color: var(--gold);
+  font-size: 0.56rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.fixture.has-next-match::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 17px;
+  height: 1px;
+  background: rgba(255, 209, 102, 0.46);
+}
+
+.fixture.has-next-match::before {
+  content: "";
+  position: absolute;
+  top: calc(50% - 9px);
+  width: 1px;
+  height: 18px;
+  background: rgba(255, 209, 102, 0.32);
+}
+
+.bracket-left .fixture.has-next-match::after {
+  right: -18px;
+}
+
+.bracket-left .fixture.has-next-match::before {
+  right: -18px;
+}
+
+.bracket-right .fixture.has-next-match::after {
+  left: -18px;
+}
+
+.bracket-right .fixture.has-next-match::before {
+  left: -18px;
 }
 
 .empty-state {
@@ -1059,7 +1115,8 @@ a {
       "meta"
       "home"
       "vs"
-      "away";
+      "away"
+      "progress";
     padding: 8px;
   }
 

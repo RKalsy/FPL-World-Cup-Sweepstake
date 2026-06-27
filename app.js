@@ -302,27 +302,35 @@ function teamLookupKey(teamName) {
 function buildGoldenBootRace(rows, teamsByName) {
   return rows
     .filter((row) => row.Player && row.Team)
-    .map((row) => ({
-      player: row.Player,
-      team: row.Team,
-      owner: ownerForTeam(row.Team, teamsByName) || row.Owner || 'Owner TBC',
-      goals: asNumber(row.Goals),
-      assists: asNumber(row.Assists)
-    }))
-    .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.player.localeCompare(b.player));
+    .map((row) => {
+      const team = teamsByName[teamLookupKey(row.Team)];
+      return {
+        player: row.Player,
+        team: row.Team,
+        owner: team?.owner || row.Owner || 'Owner TBC',
+        goals: asNumber(row.Goals),
+        assists: asNumber(row.Assists),
+        teamPoints: team?.pts || 0
+      };
+    })
+    .sort((a, b) => b.goals - a.goals || b.teamPoints - a.teamPoints || b.assists - a.assists || a.player.localeCompare(b.player));
 }
 
 function buildGoldenGloveRace(rows, teamsByName) {
   return rows
     .filter((row) => row.Player && row.Team)
-    .map((row) => ({
-      player: row.Player,
-      team: row.Team,
-      owner: ownerForTeam(row.Team, teamsByName) || row.Owner || 'Owner TBC',
-      cleanSheets: asNumber(row['Clean Sheets']),
-      goalsConceded: asNumber(row['Goals Conceded'])
-    }))
-    .sort((a, b) => b.cleanSheets - a.cleanSheets || a.goalsConceded - b.goalsConceded || a.player.localeCompare(b.player));
+    .map((row) => {
+      const team = teamsByName[teamLookupKey(row.Team)];
+      return {
+        player: row.Player,
+        team: row.Team,
+        owner: team?.owner || row.Owner || 'Owner TBC',
+        cleanSheets: asNumber(row['Clean Sheets']),
+        goalsConceded: asNumber(row['Goals Conceded']),
+        teamPoints: team?.pts || 0
+      };
+    })
+    .sort((a, b) => b.cleanSheets - a.cleanSheets || b.teamPoints - a.teamPoints || a.goalsConceded - b.goalsConceded || a.player.localeCompare(b.player));
 }
 
 function prizeAmount(awards, awardName) {
@@ -505,6 +513,8 @@ function roundLabel(round) {
     sf: 'Semi Finals',
     semifinal: 'Semi Finals',
     semifinals: 'Semi Finals',
+    thirdplace: 'Third Place',
+    thirdplaceplayoff: 'Third Place',
     final: 'Final',
     champion: 'Champion',
     winner: 'Champion'
@@ -554,8 +564,8 @@ function buildFixturesFromKnockoutRows(rows, teamsByName) {
       second,
       winner: row.Winner || row.winner || '',
       match: row.Match || row.match || '',
-      status: row.Status || row.status || '',
-      date: row.Date || row.date || ''
+      nextMatch: row['Next Match'] || row.NextMatch || row.nextMatch || '',
+      date: row['UK Date'] || row.Date || row.date || ''
     });
   });
   return byRound;
@@ -583,7 +593,8 @@ function buildFixturesFromTeamColumns(teams) {
       fixtures.push({
         first: roundTeams[index],
         second: roundTeams[index + 1],
-        winner: round.key === 'Winner' ? roundTeams[index]?.team : ''
+        winner: round.key === 'Winner' ? roundTeams[index]?.team : '',
+        nextMatch: ''
       });
     }
     byRound.set(round.label, fixtures);
@@ -602,16 +613,21 @@ function fixtureSide(team, winner, sideClass = '') {
   `;
 }
 
-function fixtureMarkup(fixture) {
+function fixtureMarkup(fixture, sideClass = '') {
+  const matchLabel = fixture.match ? `M${fixture.match}` : '';
+  const nextLabel = fixture.nextMatch ? `Winner to M${fixture.nextMatch}` : '';
+  const dateLabel = fixture.date || '';
+
   return `
-    <div class="fixture">
+    <div class="fixture ${sideClass} ${fixture.nextMatch ? 'has-next-match' : ''}">
       <div class="fixture-meta">
-        <span>${escapeHTML(fixture.match ? `Match ${fixture.match}` : fixture.status || 'Scheduled')}</span>
-        <span>${escapeHTML(fixture.date || fixture.status || '')}</span>
+        <span>${escapeHTML(matchLabel)}</span>
+        <span>${escapeHTML(dateLabel)}</span>
       </div>
       ${fixtureSide(fixture.first, fixture.winner, 'fixture-home')}
       <span class="versus">vs</span>
       ${fixtureSide(fixture.second, fixture.winner, 'fixture-away')}
+      ${nextLabel ? `<span class="fixture-progress">${escapeHTML(nextLabel)}</span>` : ''}
     </div>
   `;
 }
@@ -627,7 +643,7 @@ function bracketColumn(title, fixtures, sideClass = '') {
         <strong>${escapeHTML(title)}</strong>
         <span>${fixtures.length} ${fixtures.length === 1 ? 'tie' : 'ties'}</span>
       </div>
-      <div class="fixtures">${fixtures.map(fixtureMarkup).join('')}</div>
+      <div class="fixtures">${fixtures.map((fixture) => fixtureMarkup(fixture, sideClass)).join('')}</div>
     </article>
   `;
 }
