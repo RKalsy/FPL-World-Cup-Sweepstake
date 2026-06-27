@@ -125,7 +125,7 @@ a {
 }
 
 .hero {
-  padding: 24px 0 10px;
+  padding: 18px 0 8px;
 }
 
 .hero-kicker {
@@ -155,7 +155,7 @@ a {
   margin: 0;
   max-width: 9ch;
   font-family: "Bebas Neue", Impact, sans-serif;
-  font-size: 4.8rem;
+  font-size: 4.2rem;
   font-weight: 400;
   line-height: 0.9;
   letter-spacing: 0;
@@ -182,8 +182,18 @@ a {
 }
 
 .hero-cards {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   align-items: stretch;
-  margin-top: 24px;
+  gap: 6px;
+  margin-top: 16px;
+}
+
+.hero-card-placement {
+  grid-column: span 2;
+}
+
+.hero-card-race {
+  grid-column: span 3;
 }
 
 .hero-card,
@@ -259,9 +269,9 @@ a {
 }
 
 .leaderboard-table .movement {
-  min-width: 24px;
-  height: 24px;
-  font-size: 0.62rem;
+  min-width: 22px;
+  height: 22px;
+  font-size: 0.66rem;
   vertical-align: middle;
 }
 
@@ -329,15 +339,15 @@ a {
 .hero-card,
 .award-card {
   height: 100%;
-  min-height: 118px;
-  padding: 14px;
+  min-height: 82px;
+  padding: 9px;
 }
 
 .hero-card p,
 .award-card p {
-  margin: 0 0 8px;
+  margin: 0 0 5px;
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: 0.56rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -346,7 +356,7 @@ a {
 .award-card strong {
   display: block;
   overflow-wrap: anywhere;
-  font-size: clamp(1.08rem, 5vw, 1.35rem);
+  font-size: clamp(0.86rem, 3.4vw, 1rem);
   line-height: 1.15;
 }
 
@@ -354,10 +364,10 @@ a {
 .award-card span,
 .empty-state span {
   display: block;
-  margin-top: 8px;
+  margin-top: 5px;
   color: var(--muted);
-  font-size: 0.82rem;
-  line-height: 1.35;
+  font-size: 0.62rem;
+  line-height: 1.25;
 }
 
 .award-prize {
@@ -664,7 +674,7 @@ a {
 
 .knockout-board {
   margin-inline: -16px;
-  padding: 0 16px 8px;
+  padding: 0 16px 6px;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   scroll-snap-type: inline mandatory;
@@ -684,15 +694,15 @@ a {
 
 .bracket-shell {
   display: grid;
-  grid-template-columns: repeat(9, minmax(236px, 76vw));
+  grid-template-columns: repeat(9, minmax(164px, 50vw));
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   min-width: max-content;
 }
 
 .bracket-column {
   scroll-snap-align: start;
-  padding: 14px;
+  padding: 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--card);
@@ -702,7 +712,7 @@ a {
 
 .bracket-center {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .bracket-final {
@@ -714,35 +724,41 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .round-title strong {
-  font-size: 1rem;
+  font-size: 0.82rem;
 }
 
 .fixtures {
   display: grid;
-  gap: 10px;
+  gap: 7px;
 }
 
 .fixture {
   display: grid;
-  gap: 8px;
-  padding: 10px;
+  grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+  grid-template-areas:
+    "meta meta meta"
+    "home vs away";
+  align-items: center;
+  gap: 5px;
+  padding: 6px;
   border: 1px solid rgba(148, 163, 184, 0.12);
   border-radius: 8px;
   background: rgba(7, 17, 31, 0.44);
 }
 
 .fixture-meta {
+  grid-area: meta;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 6px;
   color: var(--muted);
-  font-size: 0.68rem;
+  font-size: 0.54rem;
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -750,15 +766,33 @@ a {
 .fixture-team {
   display: grid;
   gap: 2px;
-  min-height: 52px;
+  min-height: 34px;
   align-content: center;
-  padding: 10px;
+  padding: 6px;
   border-radius: 8px;
   background: rgba(248, 250, 252, 0.04);
 }
 
 .fixture-team span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.68rem;
   font-weight: 800;
+}
+
+.fixture-team small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fixture-home {
+  grid-area: home;
+}
+
+.fixture-away {
+  grid-area: away;
 }
 
 .fixture-team.is-winner {
@@ -771,10 +805,11 @@ a {
 }
 
 .versus {
+  grid-area: vs;
   align-self: center;
   justify-self: center;
   color: var(--muted);
-  font-size: 0.72rem;
+  font-size: 0.58rem;
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -880,7 +915,7 @@ a {
 
 @media (min-width: 560px) {
   .hero-cards {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .team-pill-grid {
@@ -1019,12 +1054,30 @@ a {
   }
 
   .fixture {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "meta"
+      "home"
+      "vs"
+      "away";
     padding: 8px;
+  }
+
+  .fixture-meta {
+    font-size: 0.62rem;
   }
 
   .fixture-team {
     min-height: 46px;
     padding: 8px;
+  }
+
+  .fixture-team span {
+    font-size: 0.78rem;
+  }
+
+  .versus {
+    font-size: 0.66rem;
   }
 
   .team-pill-grid {

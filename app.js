@@ -197,10 +197,12 @@ function normaliseTeam(row, phase) {
 }
 
 function buildPlayers(teams, previousPositions) {
-  const previousRanks = previousPositions.reduce((map, row) => {
-    if (row.Player) map[row.Player] = asNumber(row.Rank);
-    return map;
-  }, {});
+  const previousRanks = previousPositions
+    .filter((row) => row.Player)
+    .map((row) => ({
+      key: ownerLookupKey(row.Player),
+      rank: asNumber(row.Rank)
+    }));
 
   const playersByOwner = teams.reduce((map, team) => {
     if (!team.team || !team.owner) return map;
@@ -240,7 +242,10 @@ function buildPlayers(teams, previousPositions) {
     .sort((a, b) => b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.owner.localeCompare(b.owner))
     .map((player, index) => {
       const rank = index + 1;
-      const previousRank = previousRanks[player.owner] || rank;
+      const ownerKey = ownerLookupKey(player.owner);
+      const previous = previousRanks.find((entry) => entry.key === ownerKey)
+        || previousRanks.find((entry) => entry.key.startsWith(ownerKey) || ownerKey.startsWith(entry.key));
+      const previousRank = previous?.rank || rank;
       return {
         ...player,
         rank,
@@ -248,6 +253,13 @@ function buildPlayers(teams, previousPositions) {
         movement: previousRank - rank
       };
     });
+}
+
+function ownerLookupKey(owner) {
+  return String(owner || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+    .trim();
 }
 
 function metadataMap(rows) {
@@ -359,9 +371,9 @@ function raceLeaderCard(label, raceLeader, awards, prizeName, type) {
 }
 
 function movementMarkup(movement) {
-  if (movement > 0) return `<span class="movement movement-up">▲ ${movement}</span>`;
-  if (movement < 0) return `<span class="movement movement-down">▼ ${Math.abs(movement)}</span>`;
-  return '<span class="movement movement-flat">0</span>';
+  if (movement > 0) return `<span class="movement movement-up" aria-label="Up ${movement} places">▲${movement}</span>`;
+  if (movement < 0) return `<span class="movement movement-down" aria-label="Down ${Math.abs(movement)} places">▼${Math.abs(movement)}</span>`;
+  return '<span class="movement movement-flat" aria-label="No position change">=</span>';
 }
 
 function teamPill(team) {
@@ -393,8 +405,8 @@ function renderHero(players, awards, goldenBootRace, goldenGloveRace, meta, sour
     placementCard(players[2], 3, awards),
     raceLeaderCard('Golden Boot', goldenBootRace[0], awards, 'Golden Boot', 'boot'),
     raceLeaderCard('Golden Glove', goldenGloveRace[0], awards, 'Golden Glove', 'glove')
-  ].map((card) => `
-    <article class="hero-card">
+  ].map((card, index) => `
+    <article class="hero-card ${index < 3 ? 'hero-card-placement' : 'hero-card-race'}">
       <p>${escapeHTML(card.label)}</p>
       <strong>${escapeHTML(card.value)}</strong>
       <span>${escapeHTML(card.detail)}</span>
@@ -569,11 +581,11 @@ function buildFixturesFromTeamColumns(teams) {
   return byRound;
 }
 
-function fixtureSide(team, winner) {
+function fixtureSide(team, winner, sideClass = '') {
   if (!team) return '<div class="fixture-team is-empty"><span>TBD</span><small>Owner TBD</small></div>';
   const isWinner = winner && team.team.toLowerCase() === winner.toLowerCase();
   return `
-    <div class="fixture-team ${isWinner ? 'is-winner' : ''} ${team.pending ? 'is-empty' : ''}">
+    <div class="fixture-team ${sideClass} ${isWinner ? 'is-winner' : ''} ${team.pending ? 'is-empty' : ''}">
       <span>${escapeHTML(`${team.flag ? `${team.flag} ` : ''}${team.team}`)}</span>
       <small>${escapeHTML(team.owner)}</small>
     </div>
@@ -587,9 +599,9 @@ function fixtureMarkup(fixture) {
         <span>${escapeHTML(fixture.match ? `Match ${fixture.match}` : fixture.status || 'Scheduled')}</span>
         <span>${escapeHTML(fixture.date || fixture.status || '')}</span>
       </div>
-      ${fixtureSide(fixture.first, fixture.winner)}
+      ${fixtureSide(fixture.first, fixture.winner, 'fixture-home')}
       <span class="versus">vs</span>
-      ${fixtureSide(fixture.second, fixture.winner)}
+      ${fixtureSide(fixture.second, fixture.winner, 'fixture-away')}
     </div>
   `;
 }
