@@ -313,7 +313,7 @@ function buildGoldenBootRace(rows, teamsByName) {
         teamPoints: team?.pts || 0
       };
     })
-    .sort((a, b) => b.goals - a.goals || b.teamPoints - a.teamPoints || b.assists - a.assists || a.player.localeCompare(b.player));
+    .sort((a, b) => b.goals - a.goals || b.assists - a.assists || b.teamPoints - a.teamPoints || a.player.localeCompare(b.player));
 }
 
 function buildGoldenGloveRace(rows, teamsByName) {
@@ -330,7 +330,7 @@ function buildGoldenGloveRace(rows, teamsByName) {
         teamPoints: team?.pts || 0
       };
     })
-    .sort((a, b) => b.cleanSheets - a.cleanSheets || b.teamPoints - a.teamPoints || a.goalsConceded - b.goalsConceded || a.player.localeCompare(b.player));
+    .sort((a, b) => b.cleanSheets - a.cleanSheets || a.goalsConceded - b.goalsConceded || b.teamPoints - a.teamPoints || a.player.localeCompare(b.player));
 }
 
 function prizeAmount(awards, awardName) {
@@ -384,7 +384,7 @@ function raceLeaderCard(label, raceLeader, awards, prizeName, type) {
   return {
     label,
     value: raceLeader.owner,
-    detail: `${raceLeader.player} · ${primaryStat} · ${secondaryStat}${prize ? ` · ${prize}` : ''}`
+    detail: `${raceLeader.player} · ${raceLeader.team} · ${primaryStat} · ${secondaryStat}${prize ? ` · ${prize}` : ''}`
   };
 }
 
@@ -613,13 +613,14 @@ function fixtureSide(team, winner, sideClass = '') {
   `;
 }
 
-function fixtureMarkup(fixture, sideClass = '') {
+function fixtureMarkup(fixture, sideClass = '', rowSpan = 1, index = 0) {
   const matchLabel = fixture.match ? `M${fixture.match}` : '';
   const nextLabel = fixture.nextMatch ? `Winner to M${fixture.nextMatch}` : '';
   const dateLabel = fixture.date || '';
+  const rowStart = (index * rowSpan) + 1;
 
   return `
-    <div class="fixture ${sideClass} ${fixture.nextMatch ? 'has-next-match' : ''}">
+    <div class="fixture ${sideClass} ${fixture.nextMatch ? 'has-next-match' : ''}" style="grid-row: ${rowStart} / span ${rowSpan}">
       <div class="fixture-meta">
         <span>${escapeHTML(matchLabel)}</span>
         <span>${escapeHTML(dateLabel)}</span>
@@ -636,14 +637,60 @@ function roundFixtures(fixtures, label) {
   return fixtures.get(label) || [];
 }
 
-function bracketColumn(title, fixtures, sideClass = '') {
+function matchNumber(match) {
+  const number = asNumber(match);
+  return number || Number.MAX_SAFE_INTEGER;
+}
+
+function matchKey(match) {
+  return String(match || '').trim();
+}
+
+function sortByMatch(fixtures) {
+  return [...fixtures].sort((a, b) => matchNumber(a.match) - matchNumber(b.match));
+}
+
+function orderRoundByProgression(currentRound, nextRound) {
+  const remaining = sortByMatch(currentRound);
+  if (!nextRound.length) return remaining;
+
+  const ordered = [];
+  nextRound.forEach((nextFixture) => {
+    const nextMatch = matchKey(nextFixture.match);
+    remaining
+      .filter((fixture) => matchKey(fixture.nextMatch) === nextMatch)
+      .forEach((fixture) => {
+        ordered.push(fixture);
+      });
+  });
+
+  const orderedMatches = new Set(ordered.map((fixture) => fixture.match));
+  remaining
+    .filter((fixture) => !orderedMatches.has(fixture.match))
+    .forEach((fixture) => ordered.push(fixture));
+
+  return ordered;
+}
+
+function bracketRounds(fixtures) {
+  const finalFixtures = sortByMatch(roundFixtures(fixtures, 'Final'));
+  const thirdPlaceFixtures = sortByMatch(roundFixtures(fixtures, 'Third Place'));
+  const sf = orderRoundByProgression(roundFixtures(fixtures, 'Semi Finals'), finalFixtures);
+  const qf = orderRoundByProgression(roundFixtures(fixtures, 'Quarter Finals'), sf);
+  const r16 = orderRoundByProgression(roundFixtures(fixtures, 'Round of 16'), qf);
+  const r32 = orderRoundByProgression(roundFixtures(fixtures, 'Round of 32'), r16);
+
+  return { r32, r16, qf, sf, finalFixtures, thirdPlaceFixtures };
+}
+
+function bracketColumn(title, fixtures, sideClass = '', rowSpan = 1) {
   return `
     <article class="bracket-column ${sideClass}">
       <div class="round-title">
         <strong>${escapeHTML(title)}</strong>
         <span>${fixtures.length} ${fixtures.length === 1 ? 'tie' : 'ties'}</span>
       </div>
-      <div class="fixtures">${fixtures.map((fixture) => fixtureMarkup(fixture, sideClass)).join('')}</div>
+      <div class="fixtures">${fixtures.map((fixture, index) => fixtureMarkup(fixture, sideClass, rowSpan, index)).join('')}</div>
     </article>
   `;
 }
@@ -656,27 +703,26 @@ function splitRound(fixtures, midpoint) {
 }
 
 function renderBracket(fixtures) {
-  const r32 = splitRound(roundFixtures(fixtures, 'Round of 32'), 8);
-  const r16 = splitRound(roundFixtures(fixtures, 'Round of 16'), 4);
-  const qf = splitRound(roundFixtures(fixtures, 'Quarter Finals'), 2);
-  const sf = splitRound(roundFixtures(fixtures, 'Semi Finals'), 1);
-  const finalFixtures = roundFixtures(fixtures, 'Final');
-  const thirdPlaceFixtures = roundFixtures(fixtures, 'Third Place');
+  const ordered = bracketRounds(fixtures);
+  const r32 = splitRound(ordered.r32, 8);
+  const r16 = splitRound(ordered.r16, 4);
+  const qf = splitRound(ordered.qf, 2);
+  const sf = splitRound(ordered.sf, 1);
 
   return `
     <div class="bracket-shell">
-      ${bracketColumn('R32', r32.left, 'bracket-left')}
-      ${bracketColumn('R16', r16.left, 'bracket-left')}
-      ${bracketColumn('QF', qf.left, 'bracket-left')}
-      ${bracketColumn('SF', sf.left, 'bracket-left')}
+      ${bracketColumn('R32', r32.left, 'bracket-left', 1)}
+      ${bracketColumn('R16', r16.left, 'bracket-left', 2)}
+      ${bracketColumn('QF', qf.left, 'bracket-left', 4)}
+      ${bracketColumn('SF', sf.left, 'bracket-left', 8)}
       <div class="bracket-center">
-        ${bracketColumn('Final', finalFixtures, 'bracket-final')}
-        ${bracketColumn('3rd Place', thirdPlaceFixtures, 'bracket-third')}
+        ${bracketColumn('Final', ordered.finalFixtures, 'bracket-final')}
+        ${bracketColumn('3rd Place', ordered.thirdPlaceFixtures, 'bracket-third')}
       </div>
-      ${bracketColumn('SF', sf.right, 'bracket-right')}
-      ${bracketColumn('QF', qf.right, 'bracket-right')}
-      ${bracketColumn('R16', r16.right, 'bracket-right')}
-      ${bracketColumn('R32', r32.right, 'bracket-right')}
+      ${bracketColumn('SF', sf.right, 'bracket-right', 8)}
+      ${bracketColumn('QF', qf.right, 'bracket-right', 4)}
+      ${bracketColumn('R16', r16.right, 'bracket-right', 2)}
+      ${bracketColumn('R32', r32.right, 'bracket-right', 1)}
     </div>
   `;
 }
