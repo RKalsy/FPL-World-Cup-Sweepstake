@@ -486,7 +486,6 @@ a {
 }
 
 .player-card:hover,
-.bracket-column:hover,
 .award-card:hover,
 .hero-card:hover {
   background: var(--card-strong);
@@ -695,25 +694,27 @@ a {
 .bracket-shell {
   display: grid;
   grid-template-columns: repeat(9, minmax(164px, 50vw));
-  align-items: center;
+  grid-template-rows: auto repeat(8, minmax(var(--bracket-row-height), auto));
+  align-items: stretch;
   gap: 8px;
   min-width: max-content;
+  --bracket-row-height: 124px;
 }
 
 .bracket-column {
   scroll-snap-align: start;
   position: relative;
   display: grid;
-  grid-template-rows: auto auto;
-  align-self: center;
-  padding: 8px;
-  border: 1px solid var(--line);
+  grid-template-rows: auto minmax(0, 1fr);
+  align-self: stretch;
+  padding: 6px;
+  border: 1px solid transparent;
   border-radius: 8px;
-  background: var(--card);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  background: transparent;
+  box-shadow: none;
   transition: border-color 160ms ease, background 160ms ease, transform 160ms ease, box-shadow 160ms ease;
   --round-span: 1;
-  --slot-height: calc(82px * (1 - ((var(--round-span) - 1) * 0.035)));
+  --slot-height: 82px;
 }
 
 .bracket-center {
@@ -726,7 +727,8 @@ a {
   box-shadow: 0 0 22px rgba(255, 209, 102, 0.1);
 }
 
-.round-title {
+.round-title,
+.bracket-title {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -734,8 +736,14 @@ a {
   margin-bottom: 8px;
 }
 
-.round-title strong {
+.round-title strong,
+.bracket-title strong {
   font-size: 0.82rem;
+}
+
+.bracket-title {
+  min-width: 0;
+  padding: 0 2px;
 }
 
 .fixtures {
@@ -761,6 +769,7 @@ a {
   border: 1px solid rgba(148, 163, 184, 0.12);
   border-radius: 8px;
   background: rgba(7, 17, 31, 0.44);
+  --round-span: 1;
 }
 
 .bracket-final .fixtures,
@@ -850,38 +859,85 @@ a {
   text-transform: uppercase;
 }
 
-.fixture.has-next-match::after {
-  content: "";
+.connector {
   position: absolute;
+  display: none;
+  pointer-events: none;
+}
+
+.connector-in,
+.connector-out {
   top: 50%;
-  width: 17px;
+  width: 18px;
   height: 1px;
-  background: rgba(255, 209, 102, 0.46);
+  background: rgba(255, 209, 102, 0.5);
 }
 
-.fixture.has-next-match::before {
-  content: "";
-  position: absolute;
-  top: calc(50% - 9px);
+.connector-join {
   width: 1px;
-  height: 18px;
-  background: rgba(255, 209, 102, 0.32);
+  background: rgba(255, 209, 102, 0.36);
 }
 
-.bracket-left .fixture.has-next-match::after {
-  right: -18px;
-}
-
-.bracket-left .fixture.has-next-match::before {
-  right: -18px;
-}
-
-.bracket-right .fixture.has-next-match::after {
+.fixture.bracket-left.has-prev-match .connector-in {
+  display: block;
   left: -18px;
 }
 
-.bracket-right .fixture.has-next-match::before {
+.fixture.bracket-left.has-next-match .connector-out {
+  display: block;
+  right: -18px;
+}
+
+.fixture.bracket-left.branch-top .connector-join {
+  display: block;
+  top: 50%;
+  right: -18px;
+  height: calc((var(--bracket-row-height) + 8px) * var(--round-span));
+}
+
+.fixture.bracket-left.branch-bottom .connector-join {
+  display: block;
+  right: -18px;
+  bottom: 50%;
+  height: calc((var(--bracket-row-height) + 8px) * var(--round-span));
+}
+
+.fixture.bracket-right.has-prev-match .connector-in {
+  display: block;
+  right: -18px;
+}
+
+.fixture.bracket-right.has-next-match .connector-out {
+  display: block;
   left: -18px;
+}
+
+.fixture.bracket-right.branch-top .connector-join {
+  display: block;
+  top: 50%;
+  left: -18px;
+  height: calc((var(--bracket-row-height) + 8px) * var(--round-span));
+}
+
+.fixture.bracket-right.branch-bottom .connector-join {
+  display: block;
+  left: -18px;
+  bottom: 50%;
+  height: calc((var(--bracket-row-height) + 8px) * var(--round-span));
+}
+
+.fixture.bracket-final.has-prev-match .connector-in {
+  display: block;
+  left: -18px;
+}
+
+.fixture.bracket-final.has-prev-match .connector-in-alt {
+  display: block;
+  top: 50%;
+  right: -18px;
+  width: 18px;
+  height: 1px;
+  background: rgba(255, 209, 102, 0.5);
 }
 
 .empty-state {

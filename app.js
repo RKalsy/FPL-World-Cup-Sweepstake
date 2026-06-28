@@ -617,10 +617,19 @@ function fixtureMarkup(fixture, sideClass = '', rowSpan = 1, index = 0) {
   const matchLabel = fixture.match ? `M${fixture.match}` : '';
   const nextLabel = fixture.nextMatch ? `Winner to M${fixture.nextMatch}` : '';
   const dateLabel = fixture.date || '';
-  const rowStart = (index * rowSpan) + 1;
+  const branchClass = fixture.nextMatch
+    ? index % 2 === 0
+      ? 'branch-top'
+      : 'branch-bottom'
+    : '';
+  const targetClass = rowSpan > 1 ? 'has-prev-match' : '';
 
   return `
-    <div class="fixture ${sideClass} ${fixture.nextMatch ? 'has-next-match' : ''}" style="grid-row: ${rowStart} / span ${rowSpan}">
+    <div class="fixture ${sideClass} ${targetClass} ${branchClass} ${fixture.nextMatch ? 'has-next-match' : ''}">
+      <span class="connector connector-in" aria-hidden="true"></span>
+      <span class="connector connector-in-alt" aria-hidden="true"></span>
+      <span class="connector connector-out" aria-hidden="true"></span>
+      <span class="connector connector-join" aria-hidden="true"></span>
       <div class="fixture-meta">
         <span>${escapeHTML(matchLabel)}</span>
         <span>${escapeHTML(dateLabel)}</span>
@@ -683,16 +692,21 @@ function bracketRounds(fixtures) {
   return { r32, r16, qf, sf, finalFixtures, thirdPlaceFixtures };
 }
 
-function bracketColumn(title, fixtures, sideClass = '', rowSpan = 1) {
+function bracketTitle(title, fixtures, gridColumn) {
   return `
-    <article class="bracket-column ${sideClass}" style="--round-span: ${rowSpan}">
-      <div class="round-title">
-        <strong>${escapeHTML(title)}</strong>
-        <span>${fixtures.length} ${fixtures.length === 1 ? 'tie' : 'ties'}</span>
-      </div>
-      <div class="fixtures">${fixtures.map((fixture, index) => fixtureMarkup(fixture, sideClass, rowSpan, index)).join('')}</div>
-    </article>
+    <div class="bracket-title" style="grid-column: ${gridColumn}; grid-row: 1">
+      <strong>${escapeHTML(title)}</strong>
+      <span>${fixtures.length} ${fixtures.length === 1 ? 'tie' : 'ties'}</span>
+    </div>
   `;
+}
+
+function bracketFixtures(fixtures, sideClass, rowSpan, gridColumn, rowOffset = 2) {
+  return fixtures.map((fixture, index) => {
+    const rowStart = (index * rowSpan) + rowOffset;
+    return fixtureMarkup(fixture, sideClass, rowSpan, index)
+      .replace('<div class="fixture', `<div style="grid-column: ${gridColumn}; grid-row: ${rowStart} / span ${rowSpan}; --round-span: ${rowSpan}" class="fixture`);
+  }).join('');
 }
 
 function splitRound(fixtures, midpoint) {
@@ -711,18 +725,25 @@ function renderBracket(fixtures) {
 
   return `
     <div class="bracket-shell">
-      ${bracketColumn('R32', r32.left, 'bracket-left', 1)}
-      ${bracketColumn('R16', r16.left, 'bracket-left', 2)}
-      ${bracketColumn('QF', qf.left, 'bracket-left', 4)}
-      ${bracketColumn('SF', sf.left, 'bracket-left', 8)}
-      <div class="bracket-center">
-        ${bracketColumn('Final', ordered.finalFixtures, 'bracket-final', 8)}
-        ${bracketColumn('3rd Place', ordered.thirdPlaceFixtures, 'bracket-third', 8)}
-      </div>
-      ${bracketColumn('SF', sf.right, 'bracket-right', 8)}
-      ${bracketColumn('QF', qf.right, 'bracket-right', 4)}
-      ${bracketColumn('R16', r16.right, 'bracket-right', 2)}
-      ${bracketColumn('R32', r32.right, 'bracket-right', 1)}
+      ${bracketTitle('R32', r32.left, 1)}
+      ${bracketTitle('R16', r16.left, 2)}
+      ${bracketTitle('QF', qf.left, 3)}
+      ${bracketTitle('SF', sf.left, 4)}
+      ${bracketTitle('Final', ordered.finalFixtures, 5)}
+      ${bracketTitle('SF', sf.right, 6)}
+      ${bracketTitle('QF', qf.right, 7)}
+      ${bracketTitle('R16', r16.right, 8)}
+      ${bracketTitle('R32', r32.right, 9)}
+      ${bracketFixtures(r32.left, 'bracket-left', 1, 1)}
+      ${bracketFixtures(r16.left, 'bracket-left', 2, 2)}
+      ${bracketFixtures(qf.left, 'bracket-left', 4, 3)}
+      ${bracketFixtures(sf.left, 'bracket-left', 8, 4)}
+      ${bracketFixtures(ordered.finalFixtures, 'bracket-final', 8, 5, 2)}
+      ${bracketFixtures(ordered.thirdPlaceFixtures, 'bracket-third', 2, 5, 10)}
+      ${bracketFixtures(sf.right, 'bracket-right', 8, 6)}
+      ${bracketFixtures(qf.right, 'bracket-right', 4, 7)}
+      ${bracketFixtures(r16.right, 'bracket-right', 2, 8)}
+      ${bracketFixtures(r32.right, 'bracket-right', 1, 9)}
     </div>
   `;
 }
