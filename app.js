@@ -299,6 +299,23 @@ function teamLookupKey(teamName) {
     .trim();
 }
 
+function mappedFlagKey(teamName) {
+  const key = teamLookupKey(teamName);
+  if (key === 'england') return 'england';
+  if (key === 'scotland') return 'scotland';
+  return '';
+}
+
+function flagMarkup(team, className = 'team-flag') {
+  const mappedFlag = mappedFlagKey(team?.team);
+  if (mappedFlag) {
+    const label = `${team.team} flag`;
+    return `<span class="${className} flag-icon flag-${mappedFlag}" role="img" aria-label="${escapeHTML(label)}"></span>`;
+  }
+
+  return `<span class="${className}">${escapeHTML(team?.flag || '')}</span>`;
+}
+
 function buildGoldenBootRace(rows, teamsByName) {
   return rows
     .filter((row) => row.Player && row.Team)
@@ -399,7 +416,7 @@ function teamPill(team) {
   const statusIcon = team.eliminated ? '<span aria-hidden="true">×</span>' : '';
   return `
     <span class="team-pill ${statusClass}">
-      <span class="team-flag">${escapeHTML(team.flag)}</span>
+      ${flagMarkup(team)}
       <span>
         <strong>${escapeHTML(team.team)}</strong>
         <small>${escapeHTML(team.currentRound)} · ${team.pts} pts · ${formatSigned(team.gd)} GD</small>
@@ -607,7 +624,7 @@ function fixtureSide(team, winner, sideClass = '') {
   const isWinner = winner && team.team.toLowerCase() === winner.toLowerCase();
   return `
     <div class="fixture-team ${sideClass} ${isWinner ? 'is-winner' : ''} ${team.pending ? 'is-empty' : ''}">
-      <span>${escapeHTML(`${team.flag ? `${team.flag} ` : ''}${team.team}`)}</span>
+      <span class="fixture-team-name">${flagMarkup(team, 'fixture-flag')}${escapeHTML(team.team)}</span>
       <small>${escapeHTML(team.owner)}</small>
     </div>
   `;
