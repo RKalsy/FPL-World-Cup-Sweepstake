@@ -676,12 +676,16 @@ function buildFixturesFromTeamColumns(teams) {
   return byRound;
 }
 
+function isFixtureWinner(team, winner) {
+  return Boolean(winner && team?.team?.toLowerCase() === winner.toLowerCase());
+}
+
 function fixtureSide(team, winner, sideClass = '') {
   if (!team) return '<div class="fixture-team is-empty"><span>TBD</span><small>Owner TBD</small></div>';
-  const isWinner = winner && team.team.toLowerCase() === winner.toLowerCase();
+  const isWinner = isFixtureWinner(team, winner);
   return `
     <div class="fixture-team ${sideClass} ${isWinner ? 'is-winner' : ''} ${team.pending ? 'is-empty' : ''}">
-      <span class="fixture-team-name">${flagMarkup(team, 'fixture-flag')}${escapeHTML(team.team)}</span>
+      <span class="fixture-team-name">${flagMarkup(team, 'fixture-flag')}<span class="fixture-country">${escapeHTML(team.team)}</span></span>
       <small>${escapeHTML(team.owner)}</small>
     </div>
   `;
@@ -692,13 +696,16 @@ function fixtureMarkup(fixture, sideClass = '', rowSpan = 1, index = 0) {
   const nextLabel = fixture.nextMatch ? `Winner to M${fixture.nextMatch}` : '';
   const dateLabel = fixture.date || '';
   const rowStart = (index * rowSpan) + 1;
+  const gridStyle = `--row-start: ${rowStart}; --row-span: ${rowSpan};`;
+  const winnerName = [fixture.first, fixture.second].find((team) => isFixtureWinner(team, fixture.winner))?.team || '';
 
   return `
-    <div class="fixture ${sideClass} ${fixture.nextMatch ? 'has-next-match' : ''}" style="grid-row: ${rowStart} / span ${rowSpan}">
+    <div class="fixture ${sideClass} ${fixture.nextMatch ? 'has-next-match' : ''}" style="${gridStyle}">
       <div class="fixture-meta">
         <span>${escapeHTML(matchLabel)}</span>
         <span>${escapeHTML(dateLabel)}</span>
       </div>
+      ${winnerName ? `<div class="fixture-status">Winner: ${escapeHTML(winnerName)}</div>` : ''}
       ${fixtureSide(fixture.first, fixture.winner, 'fixture-home')}
       <span class="versus">vs</span>
       ${fixtureSide(fixture.second, fixture.winner, 'fixture-away')}
@@ -745,12 +752,12 @@ function bracketRounds(fixtures) {
   return { r32, r16, qf, sf, finalFixtures, thirdPlaceFixtures };
 }
 
-function bracketColumn(title, fixtures, sideClass = '', rowSpan = 1) {
+function bracketColumn(title, fixtures, sideClass = '', rowSpan = 1, subtitle = '') {
   return `
     <article class="bracket-column ${sideClass}" style="--round-span: ${rowSpan}">
       <div class="round-title">
         <strong>${escapeHTML(title)}</strong>
-        <span>${fixtures.length} ${fixtures.length === 1 ? 'tie' : 'ties'}</span>
+        <span>${escapeHTML(subtitle || `${fixtures.length} ${fixtures.length === 1 ? 'tie' : 'ties'}`)}</span>
       </div>
       <div class="fixtures">${fixtures.map((fixture, index) => fixtureMarkup(fixture, sideClass, rowSpan, index)).join('')}</div>
     </article>
@@ -773,18 +780,18 @@ function renderBracket(fixtures) {
 
   return `
     <div class="bracket-shell">
-      ${bracketColumn('R32', r32.left, 'bracket-left', 1)}
-      ${bracketColumn('R16', r16.left, 'bracket-left', 2)}
-      ${bracketColumn('QF', qf.left, 'bracket-left', 4)}
-      ${bracketColumn('SF', sf.left, 'bracket-left', 8)}
-      <div class="bracket-center">
-        ${bracketColumn('Final', ordered.finalFixtures, 'bracket-final', 8)}
-        ${bracketColumn('3rd Place', ordered.thirdPlaceFixtures, 'bracket-third', 8)}
+      ${bracketColumn('Round of 32', r32.left, 'bracket-left', 1, 'Matches 73-84')}
+      ${bracketColumn('Round of 16', r16.left, 'bracket-left', 2, 'Matches 89-94')}
+      ${bracketColumn('Quarter Finals', qf.left, 'bracket-left', 4, 'Matches 97-98')}
+      ${bracketColumn('Semi Finals', sf.left, 'bracket-left', 8, 'Match 101')}
+      <div class="bracket-center" aria-label="Final fixtures">
+        ${bracketColumn('Final', ordered.finalFixtures, 'bracket-final bracket-compact', 1, 'Match 104')}
+        ${bracketColumn('3rd Place', ordered.thirdPlaceFixtures, 'bracket-third bracket-compact', 1, 'Match 103')}
       </div>
-      ${bracketColumn('SF', sf.right, 'bracket-right', 8)}
-      ${bracketColumn('QF', qf.right, 'bracket-right', 4)}
-      ${bracketColumn('R16', r16.right, 'bracket-right', 2)}
-      ${bracketColumn('R32', r32.right, 'bracket-right', 1)}
+      ${bracketColumn('Semi Finals', sf.right, 'bracket-right', 8, 'Match 102')}
+      ${bracketColumn('Quarter Finals', qf.right, 'bracket-right', 4, 'Matches 99-100')}
+      ${bracketColumn('Round of 16', r16.right, 'bracket-right', 2, 'Matches 91-96')}
+      ${bracketColumn('Round of 32', r32.right, 'bracket-right', 1, 'Matches 76-88')}
     </div>
   `;
 }
