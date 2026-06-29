@@ -7,6 +7,48 @@ const ROUND_COLUMNS = [
   { key: 'Winner', label: 'Champion' }
 ];
 
+const FIFA_2026_BRACKET_ORDER = {
+  'Round of 32': [73, 75, 74, 77, 83, 84, 81, 82, 76, 78, 79, 80, 86, 88, 85, 87],
+  'Round of 16': [89, 90, 93, 94, 91, 92, 95, 96],
+  'Quarter Finals': [97, 98, 99, 100],
+  'Semi Finals': [101, 102],
+  'Third Place': [103],
+  'Final': [104]
+};
+
+const FIFA_2026_NEXT_MATCH = {
+  73: 89,
+  75: 89,
+  74: 90,
+  77: 90,
+  76: 91,
+  78: 91,
+  79: 92,
+  80: 92,
+  83: 93,
+  84: 93,
+  81: 94,
+  82: 94,
+  86: 95,
+  88: 95,
+  85: 96,
+  87: 96,
+  89: 97,
+  90: 97,
+  93: 98,
+  94: 98,
+  91: 99,
+  92: 99,
+  95: 100,
+  96: 100,
+  97: 101,
+  98: 101,
+  99: 102,
+  100: 102,
+  101: 104,
+  102: 104
+};
+
 const DEFAULT_CONFIG = {
   teams: window.TEAMS_CSV,
   awards: window.AWARDS_CSV,
@@ -576,6 +618,11 @@ function fixtureSlot(teamName, teamsByName) {
   };
 }
 
+function officialNextMatch(match, sheetNextMatch) {
+  const matchNumberValue = asNumber(match);
+  return FIFA_2026_NEXT_MATCH[matchNumberValue] || sheetNextMatch || '';
+}
+
 function buildFixturesFromKnockoutRows(rows, teamsByName) {
   const byRound = new Map();
   rows.forEach((row) => {
@@ -583,13 +630,15 @@ function buildFixturesFromKnockoutRows(rows, teamsByName) {
     if (!round) return;
     const first = fixtureSlot(fixtureTeam(row, 1), teamsByName);
     const second = fixtureSlot(fixtureTeam(row, 2), teamsByName);
+    const match = row.Match || row.match || '';
+    const sheetNextMatch = row['Next Match'] || row['Next match'] || row.NextMatch || row.nextMatch || '';
     if (!byRound.has(round)) byRound.set(round, []);
     byRound.get(round).push({
       first,
       second,
       winner: row.Winner || row.winner || '',
-      match: row.Match || row.match || '',
-      nextMatch: row['Next Match'] || row.NextMatch || row.nextMatch || '',
+      match,
+      nextMatch: officialNextMatch(match, sheetNextMatch),
       date: row['UK Date'] || row.Date || row.date || ''
     });
   });
@@ -667,43 +716,31 @@ function matchNumber(match) {
   return number || Number.MAX_SAFE_INTEGER;
 }
 
-function matchKey(match) {
-  return String(match || '').trim();
-}
-
 function sortByMatch(fixtures) {
   return [...fixtures].sort((a, b) => matchNumber(a.match) - matchNumber(b.match));
 }
 
-function orderRoundByProgression(currentRound, nextRound) {
-  const remaining = sortByMatch(currentRound);
-  if (!nextRound.length) return remaining;
+function sortByOfficialBracketOrder(fixtures, round) {
+  const order = FIFA_2026_BRACKET_ORDER[round] || [];
+  if (!order.length) return sortByMatch(fixtures);
 
-  const ordered = [];
-  nextRound.forEach((nextFixture) => {
-    const nextMatch = matchKey(nextFixture.match);
-    remaining
-      .filter((fixture) => matchKey(fixture.nextMatch) === nextMatch)
-      .forEach((fixture) => {
-        ordered.push(fixture);
-      });
+  return [...fixtures].sort((a, b) => {
+    const firstIndex = order.indexOf(matchNumber(a.match));
+    const secondIndex = order.indexOf(matchNumber(b.match));
+    if (firstIndex === -1 && secondIndex === -1) return matchNumber(a.match) - matchNumber(b.match);
+    if (firstIndex === -1) return 1;
+    if (secondIndex === -1) return -1;
+    return firstIndex - secondIndex;
   });
-
-  const orderedMatches = new Set(ordered.map((fixture) => fixture.match));
-  remaining
-    .filter((fixture) => !orderedMatches.has(fixture.match))
-    .forEach((fixture) => ordered.push(fixture));
-
-  return ordered;
 }
 
 function bracketRounds(fixtures) {
-  const finalFixtures = sortByMatch(roundFixtures(fixtures, 'Final'));
-  const thirdPlaceFixtures = sortByMatch(roundFixtures(fixtures, 'Third Place'));
-  const sf = orderRoundByProgression(roundFixtures(fixtures, 'Semi Finals'), finalFixtures);
-  const qf = orderRoundByProgression(roundFixtures(fixtures, 'Quarter Finals'), sf);
-  const r16 = orderRoundByProgression(roundFixtures(fixtures, 'Round of 16'), qf);
-  const r32 = orderRoundByProgression(roundFixtures(fixtures, 'Round of 32'), r16);
+  const finalFixtures = sortByOfficialBracketOrder(roundFixtures(fixtures, 'Final'), 'Final');
+  const thirdPlaceFixtures = sortByOfficialBracketOrder(roundFixtures(fixtures, 'Third Place'), 'Third Place');
+  const sf = sortByOfficialBracketOrder(roundFixtures(fixtures, 'Semi Finals'), 'Semi Finals');
+  const qf = sortByOfficialBracketOrder(roundFixtures(fixtures, 'Quarter Finals'), 'Quarter Finals');
+  const r16 = sortByOfficialBracketOrder(roundFixtures(fixtures, 'Round of 16'), 'Round of 16');
+  const r32 = sortByOfficialBracketOrder(roundFixtures(fixtures, 'Round of 32'), 'Round of 32');
 
   return { r32, r16, qf, sf, finalFixtures, thirdPlaceFixtures };
 }
