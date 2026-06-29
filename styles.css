@@ -816,8 +816,10 @@ a {
 }
 
 .fixture-team.is-winner {
-  border: 1px solid rgba(255, 209, 102, 0.68);
-  box-shadow: 0 0 20px rgba(255, 209, 102, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.82);
+  color: var(--text);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.16);
+  background: rgba(34, 197, 94, 0.08);
 }
 
 .fixture-team.is-empty {

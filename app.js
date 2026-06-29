@@ -180,8 +180,8 @@ function normaliseTeam(row, phase) {
     && !/group/i.test(phase || '');
   const sheetQualified = isTruthySheetValue(row.Qualified);
   const sheetEliminated = isTruthySheetValue(row.Eliminated);
-  const qualified = sheetQualified || Boolean(qualifiedRound);
   const eliminated = sheetEliminated || (knockoutStarted && !qualifiedRound && !sheetQualified);
+  const qualified = !eliminated && (sheetQualified || Boolean(qualifiedRound));
   const gd = row.GD === undefined || row.GD === '' ? asNumber(row.GF) - asNumber(row.GA) : asNumber(row.GD);
 
   return {
