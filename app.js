@@ -306,11 +306,19 @@ function mappedFlagKey(teamName) {
   return '';
 }
 
+function mappedFlagUrl(flagKey) {
+  const urls = {
+    england: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3f4-e0067-e0062-e0065-e006e-e0067-e007f.svg',
+    scotland: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/1f3f4-e0067-e0062-e0073-e0063-e0074-e007f.svg'
+  };
+  return urls[flagKey] || '';
+}
+
 function flagMarkup(team, className = 'team-flag') {
   const mappedFlag = mappedFlagKey(team?.team);
   if (mappedFlag) {
     const label = `${team.team} flag`;
-    return `<span class="${className} flag-icon flag-${mappedFlag}" role="img" aria-label="${escapeHTML(label)}"></span>`;
+    return `<img class="${className} flag-emoji flag-${mappedFlag}" src="${mappedFlagUrl(mappedFlag)}" alt="${escapeHTML(label)}" loading="lazy" decoding="async">`;
   }
 
   return `<span class="${className}">${escapeHTML(team?.flag || '')}</span>`;

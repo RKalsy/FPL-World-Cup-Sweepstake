@@ -643,35 +643,16 @@ a {
   font-size: 1.2rem;
 }
 
-.flag-icon {
-  display: inline-grid;
+.flag-emoji {
+  display: inline-block;
   width: 1.45em;
   height: 0.95em;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid rgba(248, 250, 252, 0.24);
-  border-radius: 2px;
-  box-shadow: 0 0 0 1px rgba(7, 17, 31, 0.28);
-}
-
-.flag-england {
-  background:
-    linear-gradient(90deg, transparent 0 41%, #CE1124 41% 59%, transparent 59%),
-    linear-gradient(180deg, transparent 0 36%, #CE1124 36% 64%, transparent 64%),
-    #FFFFFF;
-}
-
-.flag-scotland {
-  background:
-    linear-gradient(35deg, transparent 0 43%, #FFFFFF 43% 57%, transparent 57%),
-    linear-gradient(145deg, transparent 0 43%, #FFFFFF 43% 57%, transparent 57%),
-    #005EB8;
+  object-fit: contain;
+  vertical-align: -0.12em;
 }
 
 .fixture-flag {
-  display: inline-grid;
   margin-right: 5px;
-  vertical-align: -0.12em;
 }
 
 .team-pill strong,
