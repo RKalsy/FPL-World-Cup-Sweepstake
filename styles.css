@@ -707,9 +707,9 @@ a {
 
 .bracket-shell {
   display: grid;
-  grid-template-columns: repeat(9, minmax(156px, 66vw));
+  grid-template-columns: repeat(9, minmax(140px, 58vw));
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   min-width: max-content;
 }
 
@@ -719,7 +719,7 @@ a {
   display: grid;
   grid-template-rows: auto auto;
   align-self: center;
-  padding: 8px;
+  padding: 7px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--card);
@@ -779,7 +779,7 @@ a {
 
 .fixture {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 18px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr);
   grid-template-areas:
     "meta meta meta"
     "status status status"
@@ -790,7 +790,7 @@ a {
   gap: 5px;
   position: relative;
   min-height: 78px;
-  padding: 6px;
+  padding: 5px;
   border: 1px solid rgba(148, 163, 184, 0.12);
   border-radius: 8px;
   background: rgba(7, 17, 31, 0.44);
@@ -819,7 +819,7 @@ a {
   border-radius: 999px;
   background: rgba(34, 197, 94, 0.08);
   color: var(--green);
-  font-size: 0.54rem;
+  font-size: 0.5rem;
   font-weight: 900;
   line-height: 1;
   overflow-wrap: anywhere;
@@ -839,11 +839,11 @@ a {
 .fixture-team-name {
   display: flex;
   align-items: flex-start;
-  gap: 5px;
+  gap: 4px;
   min-width: 0;
   overflow: visible;
   white-space: normal;
-  font-size: 0.64rem;
+  font-size: 0.6rem;
   font-weight: 800;
   line-height: 1.15;
 }
@@ -858,7 +858,7 @@ a {
   overflow-wrap: anywhere;
   white-space: normal;
   line-height: 1.15;
-  font-size: 0.57rem;
+  font-size: 0.54rem;
 }
 
 .fixture-home {
@@ -885,7 +885,7 @@ a {
   align-self: center;
   justify-self: center;
   color: var(--muted);
-  font-size: 0.58rem;
+  font-size: 0.52rem;
   font-weight: 900;
   text-transform: uppercase;
 }
@@ -911,11 +911,30 @@ a {
 }
 
 .fixture-progress::before {
-  content: "->";
+  content: "→";
+  display: grid;
+  width: 15px;
+  height: 15px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(255, 209, 102, 0.16);
+  color: var(--gold);
+  font-size: 0.7rem;
+  line-height: 1;
 }
 
 @media (max-width: 979px) {
-  .fixture.has-next-match::after,
+  .fixture.has-next-match::after {
+    content: "";
+    position: absolute;
+    top: calc(50% - 1px);
+    right: -11px;
+    width: 11px;
+    height: 2px;
+    border-radius: 999px;
+    background: rgba(255, 209, 102, 0.42);
+  }
+
   .fixture.has-next-match::before {
     content: none;
   }

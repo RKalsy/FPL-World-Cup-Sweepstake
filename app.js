@@ -115,6 +115,7 @@ function parseCSV(text) {
 
   const headers = rows.shift().map((header) => header.trim());
   return rows.map((cells) => headers.reduce((record, header, index) => {
+    if (!header || Object.prototype.hasOwnProperty.call(record, header)) return record;
     record[header] = (cells[index] || '').trim();
     return record;
   }, {}));
@@ -128,6 +129,19 @@ function asNumber(value) {
 function isTruthySheetValue(value) {
   const normalized = String(value || '').trim().toLowerCase();
   return ['1', 'true', 'yes', 'y', 'qualified', 'winner', 'won'].includes(normalized) || asNumber(value) > 0;
+}
+
+function sheetCell(row, names) {
+  const keys = Object.keys(row || {});
+  const wanted = names.map((name) => ownerLookupKey(name));
+  const key = keys.find((candidate) => wanted.includes(ownerLookupKey(candidate)));
+  return key ? row[key] : '';
+}
+
+function hasSheetColumn(row, names) {
+  const keys = Object.keys(row || {});
+  const wanted = names.map((name) => ownerLookupKey(name));
+  return keys.some((candidate) => wanted.includes(ownerLookupKey(candidate)));
 }
 
 function escapeHTML(value) {
@@ -214,15 +228,18 @@ async function fetchSheetWithFallback(primaryUrl, fallbackUrl, snapshotKey) {
 
 function normaliseTeam(row, phase) {
   const knockoutFlags = ROUND_COLUMNS.reduce((flags, round) => {
-    flags[round.key] = isTruthySheetValue(row[round.key]);
+    flags[round.key] = isTruthySheetValue(sheetCell(row, [round.key, round.label]));
     return flags;
   }, {});
   const qualifiedRound = [...ROUND_COLUMNS].reverse().find((round) => knockoutFlags[round.key]);
-  const knockoutStarted = ROUND_COLUMNS.some((round) => Object.prototype.hasOwnProperty.call(row, round.key))
+  const knockoutStarted = ROUND_COLUMNS.some((round) => hasSheetColumn(row, [round.key, round.label]))
     && !/group/i.test(phase || '');
-  const sheetQualified = isTruthySheetValue(row.Qualified);
-  const sheetEliminated = isTruthySheetValue(row.Eliminated);
-  const eliminated = sheetEliminated || (knockoutStarted && !qualifiedRound && !sheetQualified);
+  const hasExplicitStatus = hasSheetColumn(row, ['Qualified']) || hasSheetColumn(row, ['Eliminated']);
+  const sheetQualified = isTruthySheetValue(sheetCell(row, ['Qualified']));
+  const sheetEliminated = isTruthySheetValue(sheetCell(row, ['Eliminated']));
+  const eliminated = hasExplicitStatus
+    ? sheetEliminated
+    : sheetEliminated || (knockoutStarted && !qualifiedRound && !sheetQualified);
   const qualified = !eliminated && (sheetQualified || Boolean(qualifiedRound));
   const gd = row.GD === undefined || row.GD === '' ? asNumber(row.GF) - asNumber(row.GA) : asNumber(row.GD);
 
@@ -304,6 +321,27 @@ function buildPlayers(teams, previousPositions) {
         previousRank,
         movement: previousRank - rank
       };
+    });
+}
+
+function restoreMissingSquadTeams(players, liveTeams, phase) {
+  const liveTeamKeys = new Set(liveTeams.map((team) => teamLookupKey(team.team)).filter(Boolean));
+  const playersByOwner = new Map(players.map((player) => [ownerLookupKey(player.owner), player]));
+
+  snapshotRows('teams')
+    .map((row) => normaliseTeam(row, phase))
+    .filter((team) => team.team && team.owner && !liveTeamKeys.has(teamLookupKey(team.team)))
+    .forEach((team) => {
+      const player = playersByOwner.get(ownerLookupKey(team.owner));
+      if (!player) return;
+      const alreadyShown = player.teams.some((ownedTeam) => teamLookupKey(ownedTeam.team) === teamLookupKey(team.team));
+      if (alreadyShown) return;
+      player.teams.push({
+        ...team,
+        qualified: false,
+        eliminated: true,
+        currentRound: 'Eliminated'
+      });
     });
 }
 
@@ -861,6 +899,7 @@ async function loadApp() {
       .filter((row) => row.Team && row.Owner)
       .map((row) => normaliseTeam(row, meta['Tournament Phase']));
     const players = buildPlayers(teams, previousSheet.rows);
+    restoreMissingSquadTeams(players, teams, meta['Tournament Phase']);
     const teamsByName = teamMap(teams);
     const goldenBootRace = buildGoldenBootRace(goldenBootSheet.rows, teamsByName);
     const goldenGloveRace = buildGoldenGloveRace(goldenGloveSheet.rows, teamsByName);
