@@ -345,11 +345,25 @@ a {
 
 .hero-card p,
 .award-card p {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   margin: 0 0 5px;
   color: var(--muted);
   font-size: 0.56rem;
   font-weight: 800;
   text-transform: uppercase;
+}
+
+.hero-card-icon {
+  display: inline-grid !important;
+  width: 1rem;
+  height: 1rem;
+  margin: 0 !important;
+  place-items: center;
+  color: inherit !important;
+  font-size: 0.85rem !important;
+  line-height: 1 !important;
 }
 
 .hero-card strong,

@@ -471,8 +471,10 @@ function placementCard(player, place, awards) {
 
 function raceLeaderCard(label, raceLeader, awards, prizeName, type) {
   const prize = prizeAmount(awards, prizeName);
+  const icon = type === 'boot' ? '🥅' : '🧤';
   if (!raceLeader) {
     return {
+      icon,
       label,
       value: 'TBC',
       detail: prize || 'Awaiting live entries'
@@ -487,6 +489,7 @@ function raceLeaderCard(label, raceLeader, awards, prizeName, type) {
     : `${raceLeader.goalsConceded} conceded`;
 
   return {
+    icon,
     label,
     value: raceLeader.owner,
     detail: `${raceLeader.player} · ${raceLeader.team} · ${primaryStat} · ${secondaryStat}${prize ? ` · ${prize}` : ''}`
@@ -530,7 +533,7 @@ function renderHero(players, awards, goldenBootRace, goldenGloveRace, meta, sour
     raceLeaderCard('Golden Glove', goldenGloveRace[0], awards, 'Golden Glove', 'glove')
   ].map((card, index) => `
     <article class="hero-card ${index < 3 ? 'hero-card-placement' : 'hero-card-race'}">
-      <p>${escapeHTML(card.label)}</p>
+      <p>${card.icon ? `<span class="hero-card-icon" aria-hidden="true">${escapeHTML(card.icon)}</span>` : ''}${escapeHTML(card.label)}</p>
       <strong>${escapeHTML(card.value)}</strong>
       <span>${escapeHTML(card.detail)}</span>
     </article>
