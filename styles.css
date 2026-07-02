@@ -281,12 +281,12 @@ a {
 
 .leaderboard-table td:first-child,
 .leaderboard-table th:first-child {
-  width: 18%;
+  width: 15%;
 }
 
 .leaderboard-table td:nth-child(2),
 .leaderboard-table th:nth-child(2) {
-  width: 26%;
+  width: 23%;
   text-align: left;
 }
 

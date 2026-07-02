@@ -242,6 +242,12 @@ function normaliseTeam(row, phase) {
     : sheetEliminated || (knockoutStarted && !qualifiedRound && !sheetQualified);
   const qualified = !eliminated && (sheetQualified || Boolean(qualifiedRound));
   const gd = row.GD === undefined || row.GD === '' ? asNumber(row.GF) - asNumber(row.GA) : asNumber(row.GD);
+  const groupStagePoints = asNumber(row.Pts);
+  const last32Points = asNumber(sheetCell(row, ['Last32', 'Round of 32', 'R32']));
+  const last16Points = asNumber(sheetCell(row, ['Last16', 'Round of 16', 'R16']));
+  const qfPoints = asNumber(sheetCell(row, ['QF', 'Quarter Final', 'Quarter Finals']));
+  const sfPoints = asNumber(sheetCell(row, ['SF', 'Semi Final', 'Semi Finals']));
+  const finalPoints = asNumber(sheetCell(row, ['Final', 'F']));
 
   return {
     team: row.Team || '',
@@ -254,10 +260,16 @@ function normaliseTeam(row, phase) {
     gf: asNumber(row.GF),
     ga: asNumber(row.GA),
     gd,
-    pts: asNumber(row.Pts),
+    pts: groupStagePoints,
     totalPoints: row['Total Points'] === undefined || row['Total Points'] === ''
-      ? asNumber(row.Pts)
+      ? groupStagePoints
       : asNumber(row['Total Points']),
+    groupStagePoints,
+    last32Points,
+    last16Points,
+    qfPoints,
+    sfPoints,
+    finalPoints,
     knockoutFlags,
     currentRound: eliminated ? 'Eliminated' : qualifiedRound?.label || (qualified ? 'Qualified' : 'Active'),
     qualified,
@@ -299,6 +311,12 @@ function buildPlayers(teams, previousPositions) {
         d: 0,
         l: 0,
         totalPoints: 0,
+        groupStagePoints: 0,
+        last32Points: 0,
+        last16Points: 0,
+        qfPoints: 0,
+        sfPoints: 0,
+        finalPoints: 0,
         teamsAlive: 0,
         teams: []
       });
@@ -314,6 +332,12 @@ function buildPlayers(teams, previousPositions) {
     player.w += team.w;
     player.d += team.d;
     player.l += team.l;
+    player.groupStagePoints += team.groupStagePoints;
+    player.last32Points += team.last32Points;
+    player.last16Points += team.last16Points;
+    player.qfPoints += team.qfPoints;
+    player.sfPoints += team.sfPoints;
+    player.finalPoints += team.finalPoints;
     player.teamsAlive += team.eliminated ? 0 : 1;
     player.teams.push(team);
     return map;
@@ -582,7 +606,31 @@ function playerCard(player) {
   `;
 }
 
+function visibleLeaderboardBreakdownTotal(player) {
+  return player.groupStagePoints
+    + player.last32Points
+    + player.last16Points
+    + player.qfPoints
+    + player.sfPoints
+    + player.finalPoints;
+}
+
+function validateLeaderboardTotals(players) {
+  const mismatches = players
+    .map((player) => ({
+      owner: player.owner,
+      total: player.totalPoints,
+      breakdownTotal: visibleLeaderboardBreakdownTotal(player)
+    }))
+    .filter((entry) => entry.total !== entry.breakdownTotal);
+
+  if (mismatches.length) {
+    console.warn('Leaderboard total mismatch', mismatches);
+  }
+}
+
 function renderLeaderboard(players) {
+  validateLeaderboardTotals(players);
   elements.leaderboardCards.innerHTML = `
     <div class="leaderboard-table-card">
       <table class="leaderboard-table">
@@ -590,12 +638,13 @@ function renderLeaderboard(players) {
           <tr>
             <th scope="col">Pos</th>
             <th scope="col">Player</th>
-            <th scope="col">MP</th>
             <th scope="col">Total</th>
-            <th scope="col">GD</th>
-            <th scope="col">W</th>
-            <th scope="col">D</th>
-            <th scope="col">L</th>
+            <th scope="col">GS Pts</th>
+            <th scope="col">R32</th>
+            <th scope="col">R16</th>
+            <th scope="col">QF</th>
+            <th scope="col">SF</th>
+            <th scope="col">F</th>
           </tr>
         </thead>
         <tbody>
@@ -603,12 +652,13 @@ function renderLeaderboard(players) {
             <tr class="rank-${player.rank} ${player.rank === 1 ? 'is-leader' : ''}">
               <td><span class="table-position"><span class="table-rank">${player.rank}</span>${movementMarkup(player.movement)}</span></td>
               <td><strong>${escapeHTML(player.owner)}</strong></td>
-              <td>${player.mp}</td>
               <td class="total-points"><strong>${player.totalPoints}</strong></td>
-              <td>${formatSigned(player.gd)}</td>
-              <td>${player.w}</td>
-              <td>${player.d}</td>
-              <td>${player.l}</td>
+              <td>${player.groupStagePoints}</td>
+              <td>${player.last32Points}</td>
+              <td>${player.last16Points}</td>
+              <td>${player.qfPoints}</td>
+              <td>${player.sfPoints}</td>
+              <td>${player.finalPoints}</td>
             </tr>
           `).join('')}
         </tbody>
