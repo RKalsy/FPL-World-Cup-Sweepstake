@@ -504,13 +504,16 @@ function movementMarkup(movement) {
 
 function teamPill(team) {
   const statusClass = team.eliminated ? 'is-eliminated' : team.qualified ? 'is-qualified' : 'is-active';
-  const statusIcon = team.eliminated ? '<span aria-hidden="true">×</span>' : '';
+  const statusText = team.eliminated
+    ? 'Eliminated'
+    : `${team.currentRound} · ${team.pts} pts · ${formatSigned(team.gd)} GD`;
+  const statusIcon = team.eliminated ? '<span aria-hidden="true">&times;</span>' : '';
   return `
     <span class="team-pill ${statusClass}">
       ${flagMarkup(team)}
       <span>
         <strong>${escapeHTML(team.team)}</strong>
-        <small>${escapeHTML(team.currentRound)} · ${team.pts} pts · ${formatSigned(team.gd)} GD</small>
+        <small>${escapeHTML(statusText)}</small>
       </span>
       ${statusIcon}
     </span>

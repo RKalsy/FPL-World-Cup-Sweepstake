@@ -684,8 +684,17 @@ a {
 }
 
 .team-pill.is-eliminated {
-  opacity: 0.56;
+  border-color: rgba(239, 68, 68, 0.34);
+  background: rgba(239, 68, 68, 0.06);
+  opacity: 0.58;
   color: var(--muted);
+}
+
+.team-pill.is-eliminated .team-flag,
+.team-pill.is-eliminated .flag-emoji,
+.team-pill.is-eliminated strong,
+.team-pill.is-eliminated small {
+  opacity: 0.72;
 }
 
 .team-pill.is-eliminated > span:last-child {
