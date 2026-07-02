@@ -196,6 +196,40 @@ a {
   grid-column: span 3;
 }
 
+.points-guide {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.points-guide > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 30px;
+  padding: 5px 6px;
+  border: 1px solid rgba(255, 209, 102, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 209, 102, 0.06);
+  color: var(--muted);
+  font-size: 0.58rem;
+  line-height: 1;
+}
+
+.points-guide strong {
+  color: var(--text);
+  font-size: 0.62rem;
+}
+
+.points-guide small {
+  color: var(--gold);
+  font-size: 0.56rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .hero-card,
 .award-card,
 .player-card,
@@ -1111,6 +1145,10 @@ a {
 @media (min-width: 560px) {
   .hero-cards {
     gap: 8px;
+  }
+
+  .points-guide {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
   }
 
   .team-pill-grid {
