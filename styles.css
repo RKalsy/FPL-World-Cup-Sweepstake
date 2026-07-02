@@ -270,6 +270,12 @@ a {
   text-transform: uppercase;
 }
 
+.stacked-heading {
+  display: inline-grid;
+  gap: 1px;
+  line-height: 1;
+}
+
 .leaderboard-table td {
   font-size: 0.78rem;
   font-weight: 800;

@@ -639,7 +639,7 @@ function renderLeaderboard(players) {
             <th scope="col">Pos</th>
             <th scope="col">Player</th>
             <th scope="col">Total</th>
-            <th scope="col">GS Pts</th>
+            <th scope="col"><span class="stacked-heading">GS<span>Pts</span></span></th>
             <th scope="col">R32</th>
             <th scope="col">R16</th>
             <th scope="col">QF</th>
