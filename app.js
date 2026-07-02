@@ -265,6 +265,18 @@ function normaliseTeam(row, phase) {
   };
 }
 
+function markUnqualifiedTeamsEliminated(teams, teamRows) {
+  const hasQualifiedColumn = teamRows.some((row) => hasSheetColumn(row, ['Qualified']));
+  const hasQualifiedTeams = teams.some((team) => team.qualified);
+  if (!hasQualifiedColumn || !hasQualifiedTeams) return;
+
+  teams.forEach((team) => {
+    if (team.qualified || team.eliminated) return;
+    team.eliminated = true;
+    team.currentRound = 'Eliminated';
+  });
+}
+
 function buildPlayers(teams, previousPositions) {
   const previousRanks = previousPositions
     .filter((row) => row.Player)
@@ -904,6 +916,7 @@ async function loadApp() {
     const teams = teamSheet.rows
       .filter((row) => row.Team && row.Owner)
       .map((row) => normaliseTeam(row, meta['Tournament Phase']));
+    markUnqualifiedTeamsEliminated(teams, teamSheet.rows);
     const players = buildPlayers(teams, previousSheet.rows);
     restoreMissingSquadTeams(players, teams, meta['Tournament Phase']);
     const teamsByName = teamMap(teams);
