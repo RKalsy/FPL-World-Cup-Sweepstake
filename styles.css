@@ -732,6 +732,20 @@ a {
   vertical-align: 0.08em;
 }
 
+.owner-eliminated-cross {
+  display: inline-grid;
+  width: 17px;
+  height: 17px;
+  margin-left: 6px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.16);
+  color: var(--red);
+  font-size: 0.76rem;
+  line-height: 1;
+  vertical-align: 0.08em;
+}
+
 .team-pill.is-qualified {
   border-color: rgba(34, 197, 94, 0.8);
   box-shadow: 0 0 18px rgba(34, 197, 94, 0.12);
@@ -775,7 +789,7 @@ a {
 
 .bracket-shell {
   display: grid;
-  grid-template-columns: repeat(5, minmax(128px, 52vw));
+  grid-template-columns: repeat(5, minmax(118px, 47vw));
   align-items: center;
   gap: 10px;
   min-width: max-content;
@@ -1010,7 +1024,7 @@ a {
 
 @media (min-width: 760px) {
   .bracket-shell {
-    grid-template-columns: repeat(5, minmax(148px, 24vw));
+    grid-template-columns: repeat(5, minmax(136px, 21vw));
   }
 }
 
@@ -1281,12 +1295,12 @@ a {
 
   .bracket-shell {
     grid-template-columns:
-      minmax(145px, 1fr)
-      minmax(130px, 0.86fr)
-      minmax(158px, 0.9fr)
-      minmax(130px, 0.86fr)
-      minmax(145px, 1fr);
-    min-width: 740px;
+      minmax(132px, 0.96fr)
+      minmax(118px, 0.8fr)
+      minmax(142px, 0.84fr)
+      minmax(118px, 0.8fr)
+      minmax(132px, 0.96fr);
+    min-width: 660px;
   }
 
   .bracket-column {

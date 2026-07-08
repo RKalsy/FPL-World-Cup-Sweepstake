@@ -580,12 +580,14 @@ function renderHero(players, awards, goldenBootRace, goldenGloveRace, meta, sour
 
 function playerCard(player) {
   const teams = [...player.teams].sort((a, b) => Number(a.eliminated) - Number(b.eliminated) || b.pts - a.pts || a.team.localeCompare(b.team));
+  const allTeamsEliminated = teams.length > 0 && teams.every((team) => team.eliminated);
+  const ownerStatusIcon = allTeamsEliminated ? '<span class="owner-eliminated-cross" aria-hidden="true">&times;</span>' : '';
   return `
     <details class="player-card team-owner-card">
       <summary>
         <span class="rank-badge">${player.rank}</span>
         <span class="player-main">
-          <strong>${escapeHTML(player.owner)}</strong>
+          <strong>${escapeHTML(player.owner)}${ownerStatusIcon}</strong>
           <small>${player.w}W ${player.d}D ${player.l}L</small>
         </span>
         <span class="player-points">${player.pts}<small>pts</small></span>
