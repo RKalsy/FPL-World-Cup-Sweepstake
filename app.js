@@ -543,16 +543,14 @@ function teamPill(team) {
   const statusText = team.eliminated
     ? 'Eliminated'
     : `${team.currentRound} · ${team.pts} pts · ${formatSigned(team.gd)} GD`;
-  const statusIcon = team.eliminated ? '<span aria-hidden="true">&times;</span>' : '';
   const nameIcon = team.eliminated ? '<span class="team-name-cross" aria-hidden="true">&times;</span>' : '';
   return `
     <span class="team-pill ${statusClass}">
       ${flagMarkup(team)}
       <span>
-        <strong>${escapeHTML(team.team)}${nameIcon}</strong>
+        <strong>${nameIcon}${escapeHTML(team.team)}</strong>
         <small>${escapeHTML(statusText)}</small>
       </span>
-      ${statusIcon}
     </span>
   `;
 }

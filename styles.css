@@ -720,9 +720,9 @@ a {
 
 .team-name-cross {
   display: inline-grid;
-  width: 16px;
-  height: 16px;
-  margin-left: 6px;
+  width: 15px;
+  height: 15px;
+  margin-right: 6px;
   place-items: center;
   border-radius: 999px;
   background: rgba(239, 68, 68, 0.14);
@@ -738,6 +738,7 @@ a {
 }
 
 .team-pill.is-eliminated {
+  grid-template-columns: 30px minmax(0, 1fr);
   border-color: rgba(239, 68, 68, 0.34);
   background: rgba(239, 68, 68, 0.06);
   opacity: 0.58;
@@ -751,16 +752,6 @@ a {
   opacity: 0.72;
 }
 
-.team-pill.is-eliminated > span:last-child {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border-radius: 999px;
-  background: rgba(239, 68, 68, 0.12);
-  color: var(--red);
-  font-weight: 900;
-}
 
 .knockout-board {
   margin-inline: -16px;
@@ -784,7 +775,7 @@ a {
 
 .bracket-shell {
   display: grid;
-  grid-template-columns: repeat(5, minmax(150px, 62vw));
+  grid-template-columns: repeat(5, minmax(128px, 52vw));
   align-items: center;
   gap: 10px;
   min-width: max-content;
@@ -1019,7 +1010,7 @@ a {
 
 @media (min-width: 760px) {
   .bracket-shell {
-    grid-template-columns: repeat(5, minmax(172px, 30vw));
+    grid-template-columns: repeat(5, minmax(148px, 24vw));
   }
 }
 
@@ -1290,12 +1281,12 @@ a {
 
   .bracket-shell {
     grid-template-columns:
-      minmax(170px, 1fr)
-      minmax(150px, 0.88fr)
-      minmax(180px, 0.9fr)
-      minmax(150px, 0.88fr)
-      minmax(170px, 1fr);
-    min-width: 860px;
+      minmax(145px, 1fr)
+      minmax(130px, 0.86fr)
+      minmax(158px, 0.9fr)
+      minmax(130px, 0.86fr)
+      minmax(145px, 1fr);
+    min-width: 740px;
   }
 
   .bracket-column {
