@@ -544,11 +544,12 @@ function teamPill(team) {
     ? 'Eliminated'
     : `${team.currentRound} · ${team.pts} pts · ${formatSigned(team.gd)} GD`;
   const statusIcon = team.eliminated ? '<span aria-hidden="true">&times;</span>' : '';
+  const nameIcon = team.eliminated ? '<span class="team-name-cross" aria-hidden="true">&times;</span>' : '';
   return `
     <span class="team-pill ${statusClass}">
       ${flagMarkup(team)}
       <span>
-        <strong>${escapeHTML(team.team)}</strong>
+        <strong>${escapeHTML(team.team)}${nameIcon}</strong>
         <small>${escapeHTML(statusText)}</small>
       </span>
       ${statusIcon}
@@ -879,25 +880,19 @@ function splitRound(fixtures, midpoint) {
 
 function renderBracket(fixtures) {
   const ordered = bracketRounds(fixtures);
-  const r32 = splitRound(ordered.r32, 8);
-  const r16 = splitRound(ordered.r16, 4);
   const qf = splitRound(ordered.qf, 2);
   const sf = splitRound(ordered.sf, 1);
 
   return `
     <div class="bracket-shell">
-      ${bracketColumn('Round of 32', r32.left, 'bracket-left', 1, 'Matches 73-84')}
-      ${bracketColumn('Round of 16', r16.left, 'bracket-left', 2, 'Matches 89-94')}
-      ${bracketColumn('Quarter Finals', qf.left, 'bracket-left', 4, 'Matches 97-98')}
-      ${bracketColumn('Semi Finals', sf.left, 'bracket-left', 8, 'Match 101')}
+      ${bracketColumn('Quarter Finals', qf.left, 'bracket-left', 1, 'Matches 97-98')}
+      ${bracketColumn('Semi Finals', sf.left, 'bracket-left', 2, 'Match 101')}
       <div class="bracket-center" aria-label="Final fixtures">
         ${bracketColumn('Final', ordered.finalFixtures, 'bracket-final bracket-compact', 1, 'Match 104')}
         ${bracketColumn('3rd Place', ordered.thirdPlaceFixtures, 'bracket-third bracket-compact', 1, 'Match 103')}
       </div>
-      ${bracketColumn('Semi Finals', sf.right, 'bracket-right', 8, 'Match 102')}
-      ${bracketColumn('Quarter Finals', qf.right, 'bracket-right', 4, 'Matches 99-100')}
-      ${bracketColumn('Round of 16', r16.right, 'bracket-right', 2, 'Matches 91-96')}
-      ${bracketColumn('Round of 32', r32.right, 'bracket-right', 1, 'Matches 76-88')}
+      ${bracketColumn('Semi Finals', sf.right, 'bracket-right', 2, 'Match 102')}
+      ${bracketColumn('Quarter Finals', qf.right, 'bracket-right', 1, 'Matches 99-100')}
     </div>
   `;
 }

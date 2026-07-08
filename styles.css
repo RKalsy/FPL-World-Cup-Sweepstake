@@ -718,6 +718,20 @@ a {
   white-space: nowrap;
 }
 
+.team-name-cross {
+  display: inline-grid;
+  width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(239, 68, 68, 0.14);
+  color: var(--red);
+  font-size: 0.72rem;
+  line-height: 1;
+  vertical-align: 0.08em;
+}
+
 .team-pill.is-qualified {
   border-color: rgba(34, 197, 94, 0.8);
   box-shadow: 0 0 18px rgba(34, 197, 94, 0.12);
@@ -770,7 +784,7 @@ a {
 
 .bracket-shell {
   display: grid;
-  grid-template-columns: repeat(9, minmax(140px, 58vw));
+  grid-template-columns: repeat(5, minmax(150px, 62vw));
   align-items: center;
   gap: 10px;
   min-width: max-content;
@@ -1005,7 +1019,7 @@ a {
 
 @media (min-width: 760px) {
   .bracket-shell {
-    grid-template-columns: repeat(9, minmax(172px, 30vw));
+    grid-template-columns: repeat(5, minmax(172px, 30vw));
   }
 }
 
@@ -1276,16 +1290,12 @@ a {
 
   .bracket-shell {
     grid-template-columns:
-      minmax(158px, 1.16fr)
-      minmax(150px, 1.05fr)
-      minmax(142px, 0.95fr)
-      minmax(136px, 0.86fr)
-      minmax(174px, 0.94fr)
-      minmax(136px, 0.86fr)
-      minmax(142px, 0.95fr)
-      minmax(150px, 1.05fr)
-      minmax(158px, 1.16fr);
-    min-width: 1280px;
+      minmax(170px, 1fr)
+      minmax(150px, 0.88fr)
+      minmax(180px, 0.9fr)
+      minmax(150px, 0.88fr)
+      minmax(170px, 1fr);
+    min-width: 860px;
   }
 
   .bracket-column {
@@ -1335,3 +1345,4 @@ a {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
